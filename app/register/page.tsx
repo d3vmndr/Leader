@@ -210,7 +210,7 @@ export default function RegisterPage() {
             {step === 2 && (
               <>
                 <div>
-                  <Label>School Name</Label>
+                  <Label>College/School/Institute Name</Label>
                   <Input
                     value={form.school_name}
                     onChange={(e) => update('school_name', e.target.value)}
