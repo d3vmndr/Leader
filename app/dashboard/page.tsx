@@ -57,7 +57,7 @@ useEffect(() => {
     if (data?.user) {
       setProfile({
         ...DUMMY_PROFILE,
-        full_name: data.user.user_metadata?.full_name || 'User',
+       full_name: data.user.user_metadata?.full_name || data.user.email || 'User',
         username: data.user.user_metadata?.username || 'student',
       });
     }
