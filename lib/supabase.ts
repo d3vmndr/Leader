@@ -13,7 +13,7 @@ export type Database = {
           id: string;
           full_name: string;
           username: string;
-          grade: number;
+          player_type: string;
           school_name: string;
           district: string;
           province: string;
