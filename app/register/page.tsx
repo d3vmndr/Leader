@@ -217,7 +217,15 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-
+              <div>
+                <Label>Country</Label>
+                <select
+                  className="w-full h-11 rounded-xl border border-slate-200 px-3"
+                  required
+                >
+                  <option value="Nepal">Nepal</option>
+                </select>
+              </div>
                 <div>
                   <Label>Province</Label>
                   <select
