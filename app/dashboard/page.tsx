@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Trophy, Zap, Flame, Clock, TrendingUp, Award, Star, MapPin, Calendar, ChevronRight, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 import { DUMMY_PROFILE, DUMMY_BADGES, USER_BADGES_EARNED, RECENT_CHALLENGES, DUMMY_CHALLENGES } from '@/lib/dummy-data';
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
@@ -47,7 +48,23 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
-  const profile = DUMMY_PROFILE;
+ const [profile, setProfile] = useState(DUMMY_PROFILE);
+
+useEffect(() => {
+  async function loadUser() {
+    const { data } = await supabase.auth.getUser();
+
+    if (data?.user) {
+      setProfile({
+        ...DUMMY_PROFILE,
+        full_name: data.user.user_metadata?.full_name || 'User',
+        username: data.user.user_metadata?.username || 'student',
+      });
+    }
+  }
+
+  loadUser();
+}, []);
   const upcomingChallenge = DUMMY_CHALLENGES.find((c) => c.status === 'upcoming');
   const earnedBadges = DUMMY_BADGES.filter((b) => USER_BADGES_EARNED.includes(b.id));
   const lockedBadges = DUMMY_BADGES.filter((b) => !USER_BADGES_EARNED.includes(b.id));
