@@ -64,7 +64,7 @@ useEffect(() => {
   }
 
   loadUser();
-  setProfile({ ...DUMMY_PROFILE, ...profileData });
+setProfile(DUMMY_PROFILE);
 }, []);
   const upcomingChallenge = DUMMY_CHALLENGES.find((c) => c.status === 'upcoming');
   const earnedBadges = DUMMY_BADGES.filter((b) => USER_BADGES_EARNED.includes(b.id));
