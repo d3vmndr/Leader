@@ -48,7 +48,7 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
- const [profile, setProfile] = useState<any>({});
+ const [profile, setProfile] = useState({});
 
 useEffect(() => {
   async function loadUser() {
