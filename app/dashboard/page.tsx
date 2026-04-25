@@ -48,22 +48,18 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
-const [profile, setProfile] = useState(DUMMY_PROFILE);
+ const [profile, setProfile] = useState(DUMMY_PROFILE);
 
 useEffect(() => {
   async function loadUser() {
-    const { data: authData } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
 
-    if (!authData?.user) return;
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single();
-
-    if (profileData) {
-      setProfile(profileData);
+    if (data?.user) {
+      setProfile({
+        ...DUMMY_PROFILE,
+       full_name: data.user.user_metadata?.full_name || data.user.email || 'User',
+        username: data.user.user_metadata?.username || 'student',
+      });
     }
   }
 
@@ -93,7 +89,7 @@ useEffect(() => {
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="text-sm text-slate-500 mb-0.5">Welcome back,</p>
-           <h1 className="text-2xl md:text-3xl font-black text-slate-900">{profile?.full_name || 'User'} 👋</h1>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900">{profile.full_name} 👋</h1>
             <p className="text-sm text-slate-500 mt-0.5">{profile.school_name} · Grade {profile.grade}</p>
           </div>
           {upcomingChallenge && (
