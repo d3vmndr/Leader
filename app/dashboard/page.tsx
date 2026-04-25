@@ -52,14 +52,18 @@ export default function DashboardPage() {
 
 useEffect(() => {
   async function loadUser() {
-    const { data } = await supabase.auth.getUser();
+    const { data: authData } = await supabase.auth.getUser();
 
-    if (data?.user) {
-      setProfile({
-        ...DUMMY_PROFILE,
-       full_name: data.user.user_metadata?.full_name || data.user.email || 'User',
-        username: data.user.user_metadata?.username || 'student',
-      });
+    if (!authData?.user) return;
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (profileData) {
+      setProfile(profileData);
     }
   }
 
