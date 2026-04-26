@@ -110,7 +110,8 @@ function OverviewTab() {
 }
 
 function ChallengesTab() {
-  const [showForm, setShowForm] = useState(false);
+ const [showForm, setShowForm] = useState(false);
+const [challenges, setChallenges] = useState([]);
 
   return (
     <div className="space-y-6">
