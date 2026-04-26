@@ -189,7 +189,13 @@ const [description, setDescription] = useState('');
             </div>
             <div className="md:col-span-2">
               <Label className="text-slate-700 font-medium text-sm">Description</Label>
-              <textarea className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} placeholder="Brief description of this challenge..." />
+            <textarea
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+  rows={2}
+  placeholder="Brief description of this challenge..."
+/>
             </div>
           </div>
           <div className="flex gap-3 mt-4">
