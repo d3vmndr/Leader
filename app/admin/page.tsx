@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, FileText, ChartBar as BarChart3, Trophy, Plus, CreditCard as Edit, Trash2, Eye, Download, Calendar, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, Search, ChevronDown, Settings, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
