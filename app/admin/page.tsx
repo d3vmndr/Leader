@@ -428,7 +428,9 @@ async function checkAdmin() {
   setIsAdmin(data?.is_admin || false);
   setLoading(false);
 }  
-  const renderTab = () => {
+  if (loading) {
+  return <div className="p-10 text-center">Checking access...</div>;
+}
     switch (activeTab) {
       case 'overview': return <OverviewTab />;
       case 'challenges': return <ChallengesTab />;
