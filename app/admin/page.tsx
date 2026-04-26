@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DUMMY_LEADERBOARD } from '@/lib/dummy-data';
-import { supabase } from '@/lib/supabase';
-import { useEffect } from 'react';
+  
 import { cn } from '@/lib/utils';
 
 const ADMIN_TABS = [
