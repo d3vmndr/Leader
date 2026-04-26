@@ -431,6 +431,9 @@ async function checkAdmin() {
   if (loading) {
   return <div className="p-10 text-center">Checking access...</div>;
 }
+  if (!isAdmin) {
+  return <div className="p-10 text-center">Access denied</div>;
+}
     switch (activeTab) {
       case 'overview': return <OverviewTab />;
       case 'challenges': return <ChallengesTab />;
