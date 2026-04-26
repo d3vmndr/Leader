@@ -176,7 +176,7 @@ function ChallengesTab() {
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="divide-y divide-slate-100">
-          {DUMMY_CHALLENGES.map((challenge) => (
+          {challenges.map((challenge) => (
             <div key={challenge.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
               <div className={cn(
                 'w-2 h-10 rounded-full flex-shrink-0',
