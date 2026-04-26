@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DUMMY_LEADERBOARD } from '@/lib/dummy-data';
-  
+  import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
 const ADMIN_TABS = [
@@ -434,7 +434,8 @@ async function checkAdmin() {
   if (!isAdmin) {
   return <div className="p-10 text-center">Access denied</div>;
 }
-    switch (activeTab) {
+   const renderTab = () => {
+  switch (activeTab) {
       case 'overview': return <OverviewTab />;
       case 'challenges': return <ChallengesTab />;
       case 'users': return <UsersTab />;
