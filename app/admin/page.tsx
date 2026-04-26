@@ -199,7 +199,12 @@ const [description, setDescription] = useState('');
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">Create Challenge</Button>
+            <Button
+  onClick={createChallenge}
+  className="bg-blue-600 hover:bg-blue-700 text-white"
+>
+  Create Challenge
+</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
         </div>
