@@ -111,7 +111,7 @@ function OverviewTab() {
 
 function ChallengesTab() {
   const [showForm, setShowForm] = useState(false);
-  const [challenges, setChallenges] = useState([]);
+  const [challenges, setChallenges] = useState<any[]>([]);
 
   useEffect(() => {
     loadChallenges();
