@@ -112,7 +112,9 @@ function OverviewTab() {
 function ChallengesTab() {
  const [showForm, setShowForm] = useState(false);
 const [challenges, setChallenges] = useState([]);
-
+useEffect(() => {
+  loadChallenges();
+}, []);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
