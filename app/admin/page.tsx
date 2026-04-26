@@ -110,11 +110,22 @@ function OverviewTab() {
 }
 
 function ChallengesTab() {
- const [showForm, setShowForm] = useState(false);
-const [challenges, setChallenges] = useState([]);
-useEffect(() => {
-  loadChallenges();
-}, []);
+  const [showForm, setShowForm] = useState(false);
+  const [challenges, setChallenges] = useState([]);
+
+  useEffect(() => {
+    loadChallenges();
+  }, []);
+
+  async function loadChallenges() {
+    const { data, error } = await supabase
+      .from('challenges')
+      .select('*')
+      .order('scheduled_date', { ascending: false });
+
+    if (!error) setChallenges(data || []);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
