@@ -410,6 +410,25 @@ const [loading, setLoading] = useState(true);
   useEffect(() => {
   checkAdmin();
 }, []);
+async function checkAdmin() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setLoading(false);
+    return;
+  }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+
+  setIsAdmin(data?.is_admin || false);
+  setLoading(false);
+}  
   const renderTab = () => {
     switch (activeTab) {
       case 'overview': return <OverviewTab />;
