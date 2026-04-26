@@ -180,7 +180,12 @@ const [description, setDescription] = useState('');
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Duration (minutes)</Label>
-              <Input type="number" defaultValue="30" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
+             <Input
+  type="number"
+  value={duration}
+  onChange={(e) => setDuration(Number(e.target.value))}
+  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
+/>
             </div>
             <div className="md:col-span-2">
               <Label className="text-slate-700 font-medium text-sm">Description</Label>
