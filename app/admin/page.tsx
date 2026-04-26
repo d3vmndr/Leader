@@ -110,8 +110,14 @@ function OverviewTab() {
 }
 
 function ChallengesTab() {
-  const [showForm, setShowForm] = useState(false);
-  const [challenges, setChallenges] = useState<any[]>([]);
+ const [showForm, setShowForm] = useState(false);
+const [challenges, setChallenges] = useState<any[]>([]);
+
+const [title, setTitle] = useState('');
+const [dayType, setDayType] = useState('monday');
+const [scheduledDate, setScheduledDate] = useState('');
+const [duration, setDuration] = useState(30);
+const [description, setDescription] = useState('');
 
   useEffect(() => {
     loadChallenges();
