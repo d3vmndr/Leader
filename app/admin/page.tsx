@@ -123,7 +123,28 @@ const [description, setDescription] = useState('');
     loadChallenges();
   }, []);
 
-  async function loadChallenges() {
+  async function createChallenge() {
+  const { error } = await supabase.from('challenges').insert([
+    {
+      title,
+      description,
+      day_type: dayType,
+      scheduled_date: scheduledDate,
+      duration_minutes: duration,
+      status: 'upcoming'
+    }
+  ]);
+
+  if (!error) {
+    loadChallenges();
+    setShowForm(false);
+    setTitle('');
+    setDescription('');
+    setScheduledDate('');
+    setDuration(30);
+    setDayType('monday');
+  }
+}
     const { data, error } = await supabase
       .from('challenges')
       .select('*')
