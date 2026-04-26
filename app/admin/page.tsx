@@ -171,7 +171,12 @@ const [description, setDescription] = useState('');
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Scheduled Date & Time</Label>
-              <Input type="datetime-local" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
+             <Input
+  type="datetime-local"
+  value={scheduledDate}
+  onChange={(e) => setScheduledDate(e.target.value)}
+  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
+/>
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Duration (minutes)</Label>
