@@ -158,7 +158,11 @@ const [description, setDescription] = useState('');
             <div>
               <Label className="text-slate-700 font-medium text-sm">Day Type</Label>
               <div className="relative mt-1.5">
-                <select className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+               <select
+  value={dayType}
+  onChange={(e) => setDayType(e.target.value)}
+  className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
                   <option value="monday">Monday Challenge</option>
                   <option value="friday">Friday Challenge</option>
                 </select>
