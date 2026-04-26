@@ -406,7 +406,7 @@ function LeaderboardAdminTab() {
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('overview');
 const [isAdmin, setIsAdmin] = useState(false);
-
+const [loading, setLoading] = useState(true);
   const renderTab = () => {
     switch (activeTab) {
       case 'overview': return <OverviewTab />;
