@@ -148,7 +148,12 @@ const [description, setDescription] = useState('');
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-slate-700 font-medium text-sm">Challenge Title</Label>
-              <Input placeholder="e.g. Monday Minds – Week 18" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
+             <Input
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  placeholder="e.g. Monday Minds – Week 18"
+  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
+/>
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Day Type</Label>
