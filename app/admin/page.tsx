@@ -144,7 +144,8 @@ const [description, setDescription] = useState('');
     setDayType('monday');
   }
 }
-    const { data, error } = await supabase
+    async function loadChallenges() {
+  const { data, error } = await supabase
       .from('challenges')
       .select('*')
       .order('scheduled_date', { ascending: false });
