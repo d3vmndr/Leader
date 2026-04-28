@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Users, FileText, ChartBar as BarChart3, Trophy, Plus, CreditCard as Edit, Trash2, Eye, Download, Calendar, CircleCheck as CheckCircle2, Clock, CircleAlert as AlertCircle, Search, ChevronDown, Settings, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DUMMY_LEADERBOARD } from '@/lib/dummy-data';
-  import { supabase } from '@/lib/supabase';
+import { DUMMY_LEADERBOARD, DUMMY_CHALLENGES } from '@/lib/dummy-data';
 import { cn } from '@/lib/utils';
 
 const ADMIN_TABS = [
@@ -109,49 +108,8 @@ function OverviewTab() {
 }
 
 function ChallengesTab() {
- const [showForm, setShowForm] = useState(false);
-const [challenges, setChallenges] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
 
-const [title, setTitle] = useState('');
-const [dayType, setDayType] = useState('monday');
-const [scheduledDate, setScheduledDate] = useState('');
-const [duration, setDuration] = useState(30);
-const [description, setDescription] = useState('');
-
-  useEffect(() => {
-    loadChallenges();
-  }, []);
-
-  async function createChallenge() {
-  const { error } = await supabase.from('challenges').insert([
-    {
-      title,
-      description,
-      day_type: dayType,
-      scheduled_date: scheduledDate,
-      duration_minutes: duration,
-      status: 'upcoming'
-    }
-  ]);
-
-  if (!error) {
-    loadChallenges();
-    setShowForm(false);
-    setTitle('');
-    setDescription('');
-    setScheduledDate('');
-    setDuration(30);
-    setDayType('monday');
-  }
-}
-    async function loadChallenges() {
-  const { data, error } = await supabase
-      .from('challenges')
-      .select('*')
-      .order('scheduled_date', { ascending: false });
-
-    if (!error) setChallenges(data || []);
-}
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -168,21 +126,12 @@ const [description, setDescription] = useState('');
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-slate-700 font-medium text-sm">Challenge Title</Label>
-             <Input
-  value={title}
-  onChange={(e) => setTitle(e.target.value)}
-  placeholder="e.g. Monday Minds – Week 18"
-  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
-/>
+              <Input placeholder="e.g. Monday Minds – Week 18" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Day Type</Label>
               <div className="relative mt-1.5">
-               <select
-  value={dayType}
-  onChange={(e) => setDayType(e.target.value)}
-  className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
->
+                <select className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="monday">Monday Challenge</option>
                   <option value="friday">Friday Challenge</option>
                 </select>
@@ -191,40 +140,19 @@ const [description, setDescription] = useState('');
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Scheduled Date & Time</Label>
-             <Input
-  type="datetime-local"
-  value={scheduledDate}
-  onChange={(e) => setScheduledDate(e.target.value)}
-  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
-/>
+              <Input type="datetime-local" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
             </div>
             <div>
               <Label className="text-slate-700 font-medium text-sm">Duration (minutes)</Label>
-             <Input
-  type="number"
-  value={duration}
-  onChange={(e) => setDuration(Number(e.target.value))}
-  className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white"
-/>
+              <Input type="number" defaultValue="30" className="mt-1.5 h-10 rounded-xl border-slate-200 bg-white" />
             </div>
             <div className="md:col-span-2">
               <Label className="text-slate-700 font-medium text-sm">Description</Label>
-            <textarea
-  value={description}
-  onChange={(e) => setDescription(e.target.value)}
-  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-  rows={2}
-  placeholder="Brief description of this challenge..."
-/>
+              <textarea className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} placeholder="Brief description of this challenge..." />
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <Button
-  onClick={createChallenge}
-  className="bg-blue-600 hover:bg-blue-700 text-white"
->
-  Create Challenge
-</Button>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">Create Challenge</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
         </div>
@@ -232,7 +160,7 @@ const [description, setDescription] = useState('');
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="divide-y divide-slate-100">
-          {challenges.map((challenge) => (
+          {DUMMY_CHALLENGES.map((challenge) => (
             <div key={challenge.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
               <div className={cn(
                 'w-2 h-10 rounded-full flex-shrink-0',
@@ -404,38 +332,9 @@ function LeaderboardAdminTab() {
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('overview');
-const [isAdmin, setIsAdmin] = useState(false);
-const [loading, setLoading] = useState(true);
-  useEffect(() => {
-  checkAdmin();
-}, []);
-async function checkAdmin() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
-    setLoading(false);
-    return;
-  }
-
-  const { data } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  setIsAdmin(data?.is_admin || false);
-  setLoading(false);
-}  
-  if (loading) {
-  return <div className="p-10 text-center">Checking access...</div>;
-}
-  if (!isAdmin) {
-  return <div className="p-10 text-center">Access denied</div>;
-}
-   const renderTab = () => {
-  switch (activeTab) {
+  const renderTab = () => {
+    switch (activeTab) {
       case 'overview': return <OverviewTab />;
       case 'challenges': return <ChallengesTab />;
       case 'users': return <UsersTab />;
