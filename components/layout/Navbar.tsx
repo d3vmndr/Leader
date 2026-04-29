@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trophy, Menu, X, Zap, ChartBar as BarChart3, Gift, MapPin, LayoutDashboard, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
