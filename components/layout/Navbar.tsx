@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Trophy, Menu, X, Zap, ChartBar as BarChart3, Gift, MapPin, LayoutDashboard, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
