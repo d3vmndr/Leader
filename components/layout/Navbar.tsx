@@ -15,8 +15,9 @@ const NAV_LINKS = [
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 
-export default function Navbar() {
+export export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
 
   return (
