@@ -49,13 +49,14 @@ export default function RegisterPage() {
       password: form.password,
     });
 
-    if (signUpError || !data.user) {
-      setError(signUpError?.message ?? 'Registration failed');
-      setLoading(false);
-      return;
-    }
+   if (signUpError || !data.user) {
+  console.log('SIGNUP ERROR:', signUpError);
+  setError(JSON.stringify(signUpError));
+  setLoading(false);
+  return;
+}
 
-const { error: profileError } = await supabase.from('profiles').upsert({
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       full_name: form.full_name,
       username: form.username,
