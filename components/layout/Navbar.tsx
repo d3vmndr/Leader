@@ -89,6 +89,7 @@ const [roleLoading, setRoleLoading] = useState(true);
   </Link>
 )}   
           </nav>
+      )}
 
           <div className="hidden md:flex items-center gap-2">
             <Link href="/login">
