@@ -60,7 +60,8 @@ const [roleLoading, setRoleLoading] = useState(true);
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+         {!roleLoading && (
+  <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
