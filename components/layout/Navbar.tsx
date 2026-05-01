@@ -7,6 +7,7 @@ import { Trophy, Menu, X, Zap, ChartBar as BarChart3, Gift, MapPin, LayoutDashbo
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
