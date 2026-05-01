@@ -23,11 +23,11 @@ import { supabase } from '@/lib/supabase';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/notice', label: 'Notices', icon: Bell },
+  { href: '/dashboard/blogs', label: 'Blogs', icon: BookOpen },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/districts', label: 'Districts', icon: MapPin },
   { href: '/rewards', label: 'Rewards', icon: Gift },
-  { href: '/notice', label: 'Notices', icon: Bell },
-  { href: '/blogs', label: 'Blogs', icon: BookOpen },
 ];
 
 export default function Navbar() {
