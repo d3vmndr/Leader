@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Trophy,
   Menu,
@@ -33,15 +33,20 @@ export default function Navbar() {
   const [roleLoading, setRoleLoading] = useState(true);
 
   const pathname = usePathname();
-  const handleLogout = async () => {
-  await supabase.auth.signOut();
-  setUser(null);
-  setRole(null);
-};
+  const router = useRouter();
 
-  // 🔹 Listen to auth state
+  // ✅ Logout (fixed)
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setRole(null);
+    setMobileOpen(false);
+    router.push('/');
+  };
+
+  // 🔹 Auth + role loading
   useEffect(() => {
-    const getInitialUser = async () => {
+    const loadUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -61,7 +66,7 @@ export default function Navbar() {
       setRoleLoading(false);
     };
 
-    getInitialUser();
+    loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -91,16 +96,17 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="font-bold text-blue-900 text-sm tracking-wide">
+              <span className="font-bold text-blue-900 text-sm">
                 SmartLeague
               </span>
-              <span className="text-[10px] text-amber-500 font-semibold tracking-widest uppercase">
+              <span className="text-[10px] text-amber-500 uppercase">
                 Nepal
               </span>
             </div>
@@ -117,10 +123,10 @@ export default function Navbar() {
                   key={href}
                   href={href}
                   className={cn(
-                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium',
                     pathname === href
                       ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50'
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -128,15 +134,14 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              {/* Admin Link */}
               {(role === 'admin' || role === 'superadmin') && (
                 <Link
                   href="/admin"
                   className={cn(
-                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium',
                     pathname === '/admin'
                       ? 'bg-orange-50 text-orange-700'
-                      : 'text-slate-500 hover:bg-orange-50 hover:text-orange-700'
+                      : 'text-slate-500 hover:bg-orange-50'
                   )}
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -146,60 +151,50 @@ export default function Navbar() {
             </nav>
           )}
 
-        {/* Desktop Right */}
-<div className="hidden md:flex items-center gap-2">
-  {!user ? (
-    <>
-      <Link href="/login">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-slate-600 hover:text-blue-700"
-        >
-          <LogIn className="w-4 h-4 mr-1.5" />
-          Login
-        </Button>
-      </Link>
-      <Link href="/register">
-        <Button
-          size="sm"
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200"
-        >
-          <UserPlus className="w-4 h-4 mr-1.5" />
-          Join Free
-        </Button>
-      </Link>
-    </>
-  ) : (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-slate-600">
-        {user?.email}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleLogout}
-      >
-        Logout
-      </Button>
-    </div>
-  )}
-</div>
+          {/* Desktop Right */}
+          <div className="hidden md:flex items-center gap-2">
+            {!user ? (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    <LogIn className="w-4 h-4 mr-1.5" />
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">
+                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    Join Free
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">
+                  {user?.email}
+                </span>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            )}
+          </div>
 
-{/* Mobile Toggle */}
-<button
-  className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-  onClick={() => setMobileOpen(!mobileOpen)}
->
-  {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-</button>
+          {/* Mobile Toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X /> : <Menu />}
+          </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white">
+        <div className="md:hidden border-t bg-white">
           <div className="px-4 py-3 space-y-1">
+
             {NAV_LINKS.filter((link) => {
               if (link.href === '/dashboard' && !user) return false;
               return true;
@@ -208,62 +203,46 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all',
-                  pathname === href
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-700 hover:bg-slate-50'
-                )}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
               >
                 <Icon className="w-4 h-4" />
                 {label}
               </Link>
             ))}
 
-            {/* Admin mobile */}
             {(role === 'admin' || role === 'superadmin') && (
               <Link
                 href="/admin"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-700 transition-all"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
               >
                 <ShieldCheck className="w-4 h-4" />
                 Admin Panel
               </Link>
             )}
 
-            {/* Auth buttons */}
-            <div className="pt-2 border-t border-slate-100 flex gap-2">
+            <div className="pt-2 border-t flex gap-2">
               {!user ? (
                 <>
-                  <Link
-                    href="/login"
-                    className="flex-1"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <Button variant="outline" className="w-full" size="sm">
-                      Login
-                    </Button>
+                  <Link href="/login" className="flex-1">
+                    <Button variant="outline" className="w-full">Login</Button>
                   </Link>
-                  <Link
-                    href="/register"
-                    className="flex-1"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                      size="sm"
-                    >
-                      Join Free
-                    </Button>
+                  <Link href="/register" className="flex-1">
+                    <Button className="w-full">Join Free</Button>
                   </Link>
                 </>
               ) : (
-                <span className="text-sm text-slate-600 w-full text-center">
-                  Logged in
-                </span>
+                <div className="flex flex-col gap-2 w-full">
+                  <span className="text-sm text-center">
+                    {user?.email}
+                  </span>
+                  <Button variant="outline" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
               )}
             </div>
+
           </div>
         </div>
       )}
