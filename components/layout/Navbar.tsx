@@ -146,55 +146,53 @@ export default function Navbar() {
             </nav>
           )}
 
-          {/* Desktop Right */}
-          <div className="hidden md:flex items-center gap-2">
-            {!user ? (
-              <>
-                <Link href="/login">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-600 hover:text-blue-700"
-                  >
-                    <LogIn className="w-4 h-4 mr-1.5" />
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200"
-                  >
-                    <UserPlus className="w-4 h-4 mr-1.5" />
-                    Join Free
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-  <span className="text-sm text-slate-600">
-    {user?.email}
-  </span>
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={handleLogout}
-  >
-    Logout
-  </Button>
+        {/* Desktop Right */}
+<div className="hidden md:flex items-center gap-2">
+  {!user ? (
+    <>
+      <Link href="/login">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-slate-600 hover:text-blue-700"
+        >
+          <LogIn className="w-4 h-4 mr-1.5" />
+          Login
+        </Button>
+      </Link>
+      <Link href="/register">
+        <Button
+          size="sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200"
+        >
+          <UserPlus className="w-4 h-4 mr-1.5" />
+          Join Free
+        </Button>
+      </Link>
+    </>
+  ) : (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-slate-600">
+        {user?.email}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleLogout}
+      >
+        Logout
+      </Button>
+    </div>
+  )}
 </div>
 
-          {/* Mobile Toggle */}
-          <button
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
+{/* Mobile Toggle */}
+<button
+  className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+  onClick={() => setMobileOpen(!mobileOpen)}
+>
+  {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+</button>
         </div>
       </div>
 
