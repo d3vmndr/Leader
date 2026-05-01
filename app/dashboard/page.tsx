@@ -100,10 +100,9 @@ export default function Navbar() {
       }
     );
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+return () => {
+  listener?.subscription?.unsubscribe();
+};
 
   // ✅ filter links
   const filteredLinks = NAV_LINKS.filter((link) => {
