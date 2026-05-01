@@ -63,16 +63,18 @@ export default function RegisterPage() {
       return;
     }
 
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      full_name: form.full_name,
-      username: form.username,
-      player_type: form.player_type,
-      school_name: form.school_name,
-      district: form.district,
-      province: form.province,
-      parent_phone: form.parent_phone,
-    });
+  const { error: profileError } = await supabase.from('profiles').insert([
+  {
+    id: data.user.id,
+    full_name: form.full_name,
+    username: form.username,
+    player_type: form.player_type,
+    school_name: form.school_name,
+    district: form.district,
+    province: form.province,
+    parent_phone: form.parent_phone,
+  },
+]);
 
     if (profileError) {
       setError(profileError.message);
