@@ -98,12 +98,14 @@ const router = useRouter();
       )}
 
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-slate-600 hover:text-blue-700">
-                <LogIn className="w-4 h-4 mr-1.5" />
-                Login
-              </Button>
-            </Link>
+           <Button
+  variant="ghost"
+  size="sm"
+  onClick={handleLogout}
+  className="text-slate-600 hover:text-blue-700"
+>
+  Logout
+</Button>
             <Link href="/register">
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200">
                 <UserPlus className="w-4 h-4 mr-1.5" />
