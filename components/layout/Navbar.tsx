@@ -33,6 +33,11 @@ export default function Navbar() {
   const [roleLoading, setRoleLoading] = useState(true);
 
   const pathname = usePathname();
+  const handleLogout = async () => {
+  await supabase.auth.signOut();
+  setUser(null);
+  setRole(null);
+};
 
   // 🔹 Listen to auth state
   useEffect(() => {
