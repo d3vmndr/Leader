@@ -7,7 +7,6 @@ import { Trophy, Menu, X, Zap, ChartBar as BarChart3, Gift, MapPin, LayoutDashbo
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,24 +17,19 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
- const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 const [roleLoading, setRoleLoading] = useState(true);
-const [user, setUser] = useState<any>(null);
- const pathname = usePathname();
-const router = useRouter();
+  const pathname = usePathname();
  useEffect(() => {
   const loadRole = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-  if (!user) {
-  setUser(null);
-  setRoleLoading(false);
-  return;
-}
-
-setUser(user);
+    if (!user) {
+      setRoleLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from('profiles')
@@ -50,10 +44,7 @@ setUser(user);
 
   loadRole();
 }, []);
-  async function handleLogout() {
-  await supabase.auth.signOut();
-  router.push('/login');
-}
+  
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
@@ -69,8 +60,7 @@ setUser(user);
             </div>
           </Link>
 
-     
- {!roleLoading && (
+         {!roleLoading && (
   <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
@@ -87,7 +77,7 @@ setUser(user);
                 {label}
               </Link>
             ))}
-         {(role === 'admin' || role === 'superadmin') && (
+         {!roleLoading && (role === 'admin' || role === 'superadmin') && (
   <Link href="/admin" className={cn(
     'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
     pathname === '/admin'
@@ -101,33 +91,20 @@ setUser(user);
           </nav>
       )}
 
-         <div className="hidden md:flex items-center gap-2">
-  {!user ? (
-    <>
-      <Link href="/login">
-        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-blue-700">
-          <LogIn className="w-4 h-4 mr-1.5" />
-          Login
-        </Button>
-      </Link>
-      <Link href="/register">
-        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200">
-          <UserPlus className="w-4 h-4 mr-1.5" />
-          Join Free
-        </Button>
-      </Link>
-    </>
-  ) : (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleLogout}
-      className="text-slate-600 hover:text-blue-700"
-    >
-      Logout
-    </Button>
-  )}
-</div>
+          <div className="hidden md:flex items-center gap-2">
+            <Link href="/login">
+              <Button variant="ghost" size="sm" className="text-slate-600 hover:text-blue-700">
+                <LogIn className="w-4 h-4 mr-1.5" />
+                Login
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200">
+                <UserPlus className="w-4 h-4 mr-1.5" />
+                Join Free
+              </Button>
+            </Link>
+          </div>
 
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
