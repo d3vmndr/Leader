@@ -1,57 +1,42 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import {
+  Trophy, Zap, Flame, Clock, TrendingUp, Award, Star,
+  MapPin, Calendar, ChevronRight, Target
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import {
-  Trophy,
-  Zap,
-  Flame,
-  Clock,
-  TrendingUp,
-  Award,
-  Star,
-  MapPin,
-  Calendar,
-  ChevronRight,
-  Target,
-} from 'lucide-react';
-
-/* ---------------- UI COMPONENTS ---------------- */
-const Button = ({ children, className = "", ...props }) => (
-  <button
-    className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-bold transition-all active:scale-95 disabled:opacity-50 ${className}`}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-const Badge = ({ children, className = "" }) => (
-  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${className}`}>
-    {children}
-  </span>
-);
+  DUMMY_PROFILE,
+  DUMMY_BADGES,
+  USER_BADGES_EARNED,
+  RECENT_CHALLENGES,
+  DUMMY_CHALLENGES
+} from '@/lib/dummy-data';
 
 /* ---------------- TIMER ---------------- */
-function CountdownTimer({ targetDate }) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+function CountdownTimer({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0, hours: 0, minutes: 0, seconds: 0
+  });
 
   useEffect(() => {
-    if (!targetDate) return;
-
-    function calc() {
+    const calc = () => {
       const diff = new Date(targetDate).getTime() - Date.now();
       if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
+        return setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
+
       setTimeLeft({
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
         minutes: Math.floor((diff % 3600000) / 60000),
         seconds: Math.floor((diff % 60000) / 1000),
       });
-    }
+    };
 
     calc();
     const id = setInterval(calc, 1000);
@@ -59,65 +44,68 @@ function CountdownTimer({ targetDate }) {
   }, [targetDate]);
 
   return (
-    <div className="flex gap-2">
-      {Object.entries(timeLeft).map(([key, value]) => (
-        <div key={key} className="bg-white p-2 rounded-lg text-center min-w-[50px]">
-          <div className="font-bold text-blue-700">{String(value).padStart(2, '0')}</div>
-          <div className="text-[9px] uppercase">{key}</div>
+    <div className="flex items-center gap-2">
+      {['days', 'hours', 'minutes', 'seconds'].map((k, i) => (
+        <div key={k} className="flex items-center gap-2">
+          <div className="bg-white rounded-xl p-2 text-center min-w-[52px] shadow-sm border">
+            <div className="text-xl font-black text-blue-700">
+              {String((timeLeft as any)[k]).padStart(2, '0')}
+            </div>
+            <div className="text-[9px] text-slate-500 uppercase">
+              {k}
+            </div>
+          </div>
+          {i < 3 && <span className="text-blue-400 font-bold text-lg">:</span>}
         </div>
       ))}
     </div>
   );
 }
 
-/* ---------------- PAGE ---------------- */
+/* ---------------- MAIN ---------------- */
 export default function DashboardPage() {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
+      // 1. get logged user
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
 
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+      if (!user) return;
 
+      // 2. get profile from DB
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (data) {
-        setProfile(data);
+      if (error || !data) {
+        console.log('PROFILE ERROR:', error);
+        return;
       }
 
-      setLoading(false);
+      setProfile(data);
     }
 
     loadProfile();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-sm text-slate-500">Loading dashboard...</div>
-      </div>
-    );
-  }
-
+  // ⛔ important guard
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-sm text-red-500">Profile not found</div>
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
+        Loading dashboard...
       </div>
     );
   }
 
-  const streakPct = Math.min((profile.streak || 0) * 10, 100);
+  const upcomingChallenge = DUMMY_CHALLENGES.find(c => c.status === 'upcoming');
+  const earnedBadges = DUMMY_BADGES.filter(b => USER_BADGES_EARNED.includes(b.id));
+  const lockedBadges = DUMMY_BADGES.filter(b => !USER_BADGES_EARNED.includes(b.id));
+
+  const streakPct = Math.min((profile.streak / 10) * 100, 100);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -127,38 +115,47 @@ export default function DashboardPage() {
         <div className="mb-8">
           <p className="text-sm text-slate-500">Welcome back,</p>
           <h1 className="text-3xl font-black">
-            {profile.full_name || profile.username || 'User'} 👋
+            {profile.full_name} 👋
           </h1>
           <p className="text-sm text-slate-500">
-            {profile.school_name || 'No School'} • {profile.district || 'No District'}
+            {profile.school_name}
           </p>
         </div>
 
         {/* STATS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Stat icon={Target} label="Score" value={profile.total_score || 0} />
-          <Stat icon={Trophy} label="National Rank" value={`#${profile.national_rank || '-'}`} />
-          <Stat icon={MapPin} label="District" value={profile.district || '-'} />
-          <Stat icon={Flame} label="Streak" value={`${profile.streak || 0}`} />
+          <Stat icon={Target} label="Score" value={profile.total_score} />
+          <Stat icon={Trophy} label="National Rank" value={`#${profile.national_rank}`} />
+          <Stat icon={MapPin} label="District Rank" value={`#${profile.district_rank}`} />
+          <Stat icon={Flame} label="Streak" value={`${profile.streak} weeks`} />
         </div>
 
-        {/* STREAK */}
-        <div className="bg-white p-6 rounded-2xl border mb-8">
-          <h3 className="font-bold mb-4">Consistency</h3>
-          <div className="text-4xl font-black mb-2">{profile.streak || 0}</div>
-          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-green-500"
-              style={{ width: `${streakPct}%` }}
-            />
+        {/* CHALLENGE */}
+        {upcomingChallenge && (
+          <div className="bg-blue-900 text-white rounded-2xl p-6 mb-8">
+            <h2 className="text-xl font-bold mb-2">
+              {upcomingChallenge.title}
+            </h2>
+            <CountdownTimer targetDate={upcomingChallenge.scheduled_date} />
+          </div>
+        )}
+
+        {/* BADGES */}
+        <div className="bg-white rounded-2xl p-6 mb-8">
+          <h3 className="font-bold mb-4">Badges</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {earnedBadges.map(b => (
+              <div key={b.id} className="p-3 bg-amber-50 rounded-xl text-center">
+                {b.name}
+              </div>
+            ))}
+            {lockedBadges.map(b => (
+              <div key={b.id} className="p-3 bg-slate-100 rounded-xl text-center opacity-50">
+                {b.name}
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* CTA */}
-        <Button className="bg-blue-600 text-white px-6 py-3">
-          <Zap className="w-4 h-4 mr-2" />
-          Join Next Challenge
-        </Button>
 
       </div>
     </div>
@@ -166,11 +163,11 @@ export default function DashboardPage() {
 }
 
 /* ---------------- SMALL COMPONENT ---------------- */
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon: Icon, label, value }: any) {
   return (
     <div className="bg-white p-4 rounded-xl border">
       <Icon className="w-5 h-5 mb-2 text-blue-600" />
-      <div className="text-xl font-bold">{value}</div>
+      <div className="text-lg font-bold">{value}</div>
       <div className="text-xs text-slate-500">{label}</div>
     </div>
   );
