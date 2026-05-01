@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = 'https://YOUR_d3vmndr_PROJECT_URL';
+const supabaseAnonKey = 'YOUR_d3vmndr_ANON_KEY';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
