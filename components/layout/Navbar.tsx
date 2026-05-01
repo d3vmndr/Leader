@@ -20,16 +20,19 @@ export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
 const [roleLoading, setRoleLoading] = useState(true);
   const pathname = usePathname();
- useEffect(() => {
+useEffect(() => {
   const loadRole = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setUser(null);
       setRoleLoading(false);
       return;
     }
+
+    setUser(user);
 
     const { data } = await supabase
       .from('profiles')
@@ -44,7 +47,6 @@ const [roleLoading, setRoleLoading] = useState(true);
 
   loadRole();
 }, []);
-  
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
