@@ -171,11 +171,18 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              <span className="text-sm text-slate-600">
-                Logged in
-              </span>
-            )}
-          </div>
+              <div className="flex items-center gap-2">
+  <span className="text-sm text-slate-600">
+    {user?.email}
+  </span>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={handleLogout}
+  >
+    Logout
+  </Button>
+</div>
 
           {/* Mobile Toggle */}
           <button
