@@ -3,16 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Zap, Eye, EyeOff, UserPlus, ChevronDown } from 'lucide-react';
+import { Zap, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
-import { NEPAL_DISTRICTS, NEPAL_PROVINCES, getDistrictsByProvince } from '@/lib/nepal-districts';
+import {
+  NEPAL_DISTRICTS,
+  NEPAL_PROVINCES,
+  getDistrictsByProvince,
+} from '@/lib/nepal-districts';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,12 +52,11 @@ export default function RegisterPage() {
       password: form.password,
     });
 
-   if (signUpError || !data.user) {
-  console.log('SIGNUP ERROR:', signUpError);
-  setError(JSON.stringify(signUpError));
-  setLoading(false);
-  return;
-}
+    if (signUpError || !data.user) {
+      setError(signUpError?.message || 'Signup failed');
+      setLoading(false);
+      return;
+    }
 
     const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
@@ -79,6 +81,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
+      {/* LEFT PANEL */}
       <div className="hidden lg:flex lg:w-2/5 gradient-hero flex-col justify-between p-12">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
@@ -86,7 +89,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <div className="font-bold text-white text-sm">SmartLeague</div>
-            <div className="text-[10px] text-amber-300 font-semibold tracking-widest uppercase">
+            <div className="text-[10px] text-amber-300 uppercase">
               Nepal
             </div>
           </div>
@@ -96,14 +99,17 @@ export default function RegisterPage() {
           <h2 className="text-3xl font-black text-white mb-4">
             Join Nepal&apos;s Smartest Community
           </h2>
-          <p className="text-blue-100 text-base mb-6">
+          <p className="text-blue-100 text-base">
             Compete nationally. Represent your district. Win real prizes.
           </p>
         </div>
 
-        <div className="text-blue-200 text-sm">&copy; 2024 SmartLeague Nepal</div>
+        <div className="text-blue-200 text-sm">
+          &copy; 2024 SmartLeague Nepal
+        </div>
       </div>
 
+      {/* FORM */}
       <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
         <div className="w-full max-w-lg py-8">
 
@@ -112,7 +118,7 @@ export default function RegisterPage() {
               Create Your Account
             </h1>
             <p className="text-slate-500 text-sm">
-              Step {step} of 2
+              Fill all details below
             </p>
           </div>
 
@@ -122,150 +128,116 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form
-            onSubmit={
-              step === 1
-                ? (e) => {
-                    e.preventDefault();
-                    setStep(2);
-                  }
-                : handleRegister
-            }
-            className="space-y-4"
-          >
+          <form onSubmit={handleRegister} className="space-y-4">
 
-            {step === 1 && (
-              <>
-                <div>
-                  <Label>Full Name</Label>
-                  <Input
-                    value={form.full_name}
-                    onChange={(e) => update('full_name', e.target.value)}
-                    required
-                  />
-                </div>
+            {/* STEP 1 FIELDS */}
+            <div>
+              <Label>Full Name</Label>
+              <Input
+                value={form.full_name}
+                onChange={(e) => update('full_name', e.target.value)}
+                required
+              />
+            </div>
 
-                <div>
-                  <Label>Username</Label>
-                  <Input
-                    value={form.username}
-                    onChange={(e) => update('username', e.target.value)}
-                    required
-                  />
-                </div>
+            <div>
+              <Label>Username</Label>
+              <Input
+                value={form.username}
+                onChange={(e) => update('username', e.target.value)}
+                required
+              />
+            </div>
 
-                {/* FIXED HERE */}
-                <div>
-                  <Label>Player Type</Label>
-                  <div className="relative mt-1.5">
-                    <select
-                      value={form.player_type}
-                      onChange={(e) =>
-                        update('player_type', e.target.value)
-                      }
-                      className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 appearance-none"
-                      required
-                    >
-                      <option value="Student">Student</option>
-                      <option value="Teacher">Teacher</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => update('email', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label>Password</Label>
-                  <div className="relative">
-                    <Input
-                      type={showPass ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={(e) => update('password', e.target.value)}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                    >
-                      {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full">
-                  Continue
-                </Button>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <div>
-                  <Label>College/School/Institute Name</Label>
-                  <Input
-                    value={form.school_name}
-                    onChange={(e) => update('school_name', e.target.value)}
-                    required
-                  />
-                </div>
-              <div>
-                <Label>Country</Label>
+            <div>
+              <Label>Player Type</Label>
+              <div className="relative mt-1.5">
                 <select
-                  className="w-full h-11 rounded-xl border border-slate-200 px-3"
+                  value={form.player_type}
+                  onChange={(e) => update('player_type', e.target.value)}
+                  className="w-full h-11 rounded-xl border px-3 appearance-none"
                   required
                 >
-                  <option value="Nepal">Nepal</option>
+                  <option value="Student">Student</option>
+                  <option value="Teacher">Teacher</option>
                 </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" />
               </div>
-                <div>
-                  <Label>Province</Label>
-                  <select
-                    value={form.province}
-                    onChange={(e) => update('province', e.target.value)}
-                    className="w-full h-11 rounded-xl border border-slate-200 px-3"
-                    required
-                  >
-                    <option value="">Select Province</option>
-                    {NEPAL_PROVINCES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            </div>
 
-                <div>
-                  <Label>District</Label>
-                  <select
-                    value={form.district}
-                    onChange={(e) => update('district', e.target.value)}
-                    className="w-full h-11 rounded-xl border border-slate-200 px-3"
-                    required
-                  >
-                    <option value="">Select District</option>
-                    {filteredDistricts.map((d) => (
-                      <option key={d.name} value={d.name}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                required
+              />
+            </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? 'Creating...' : 'Create Account'}
-                </Button>
-              </>
-            )}
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPass ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => update('password', e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* STEP 2 FIELDS */}
+            <div>
+              <Label>School/College</Label>
+              <Input
+                value={form.school_name}
+                onChange={(e) => update('school_name', e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Province</Label>
+              <select
+                value={form.province}
+                onChange={(e) => update('province', e.target.value)}
+                className="w-full h-11 rounded-xl border px-3"
+                required
+              >
+                <option value="">Select Province</option>
+                {NEPAL_PROVINCES.map((p) => (
+                  <option key={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>District</Label>
+              <select
+                value={form.district}
+                onChange={(e) => update('district', e.target.value)}
+                className="w-full h-11 rounded-xl border px-3"
+                required
+              >
+                <option value="">Select District</option>
+                {filteredDistricts.map((d) => (
+                  <option key={d.name}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Creating...' : 'Create Account'}
+            </Button>
+
           </form>
         </div>
       </div>
