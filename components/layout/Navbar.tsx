@@ -29,10 +29,13 @@ const router = useRouter();
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      setRoleLoading(false);
-      return;
-    }
+  if (!user) {
+  setUser(null);
+  setRoleLoading(false);
+  return;
+}
+
+setUser(user);
 
     const { data } = await supabase
       .from('profiles')
