@@ -27,16 +27,17 @@ const NAV_LINKS = [
   { href: '/districts', label: 'Districts', icon: MapPin },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 
-  // Only for normal users
+  // only for normal users
   { href: '/notices', label: 'Notice', icon: Bell },
   { href: '/blogs', label: 'Blogs', icon: BookOpen },
 ];
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
     setRole(null);
     setMobileOpen(false);
     router.push('/');
@@ -60,14 +62,17 @@ export default function Navbar() {
       if (user) {
         const { data } = await supabase
           .from('profiles')
-          .select('role')
+          .select('full_name, role')
           .eq('id', user.id)
           .single();
 
-        if (data) setRole(data.role);
+        if (data) {
+          setProfile(data);
+          setRole(data.role);
+        }
       }
 
-      setRoleLoading(false);
+      setLoading(false);
     };
 
     loadUser();
@@ -80,12 +85,16 @@ export default function Navbar() {
         if (currentUser) {
           const { data } = await supabase
             .from('profiles')
-            .select('role')
+            .select('full_name, role')
             .eq('id', currentUser.id)
             .single();
 
-          if (data) setRole(data.role);
+          if (data) {
+            setProfile(data);
+            setRole(data.role);
+          }
         } else {
+          setProfile(null);
           setRole(null);
         }
       }
@@ -96,11 +105,10 @@ export default function Navbar() {
     };
   }, []);
 
-  // ✅ FILTER LOGIC (CORE FIX)
+  // ✅ filter links
   const filteredLinks = NAV_LINKS.filter((link) => {
     if (link.href === '/dashboard' && !user) return false;
 
-    // Hide Notice & Blogs for admin/superadmin
     if (
       (link.href === '/notices' || link.href === '/blogs') &&
       (role === 'admin' || role === 'superadmin')
@@ -132,7 +140,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          {!roleLoading && (
+          {!loading && (
             <nav className="hidden md:flex items-center gap-1">
               {filteredLinks.map(({ href, label, icon: Icon }) => (
                 <Link
@@ -167,7 +175,7 @@ export default function Navbar() {
             </nav>
           )}
 
-          {/* Right */}
+          {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
             {!user ? (
               <>
@@ -185,10 +193,12 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">
-                  {user?.email}
+              <div className="flex items-center gap-3">
+                {/* ✅ FIX: show name instead of email */}
+                <span className="text-sm font-medium text-slate-700">
+                  {profile?.full_name || 'User'}
                 </span>
+
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
@@ -196,7 +206,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Toggle */}
+          {/* Mobile toggle */}
           <button
             className="md:hidden p-2"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -234,20 +244,21 @@ export default function Navbar() {
               </Link>
             )}
 
-            <div className="pt-2 border-t flex gap-2">
+            <div className="pt-2 border-t">
               {!user ? (
-                <>
+                <div className="flex gap-2">
                   <Link href="/login" className="flex-1">
                     <Button variant="outline" className="w-full">Login</Button>
                   </Link>
                   <Link href="/register" className="flex-1">
                     <Button className="w-full">Join Free</Button>
                   </Link>
-                </>
+                </div>
               ) : (
                 <div className="flex flex-col gap-2 w-full">
-                  <span className="text-sm text-center">
-                    {user?.email}
+                  {/* ✅ FIX HERE ALSO */}
+                  <span className="text-sm text-center font-medium">
+                    {profile?.full_name || 'User'}
                   </span>
                   <Button variant="outline" onClick={handleLogout}>
                     Logout
