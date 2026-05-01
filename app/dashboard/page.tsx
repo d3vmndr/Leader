@@ -32,12 +32,17 @@ export default function RegisterPage() {
     parent_phone: '',
   });
 
-  function update(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (field === 'province') {
-      setForm((prev) => ({ ...prev, province: value, district: '' }));
-    }
+  function update(field: keyof typeof form, value: string) {
+  setForm((prev) => ({ ...prev, [field]: value }));
+
+  if (field === 'province') {
+    setForm((prev) => ({
+      ...prev,
+      province: value,
+      district: '',
+    }));
   }
+}
 
   const filteredDistricts =
     form.province ? getDistrictsByProvince(form.province) : NEPAL_DISTRICTS;
