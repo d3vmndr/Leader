@@ -14,6 +14,8 @@ import {
   LogIn,
   UserPlus,
   ShieldCheck,
+  Bell,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,10 +26,8 @@ const NAV_LINKS = [
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/districts', label: 'Districts', icon: MapPin },
   { href: '/rewards', label: 'Rewards', icon: Gift },
-
-  // NEW (only for normal users)
-  { href: '/notices', label: 'Notice', icon: Gift },
-  { href: '/blogs', label: 'Blogs', icon: Gift },
+  { href: '/notice', label: 'Notices', icon: Bell },
+  { href: '/blogs', label: 'Blogs', icon: BookOpen },
 ];
 
 export default function Navbar() {
