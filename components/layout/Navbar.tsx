@@ -20,7 +20,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
 const [roleLoading, setRoleLoading] = useState(true);
-  const pathname = usePathname();
+ const pathname = usePathname();
+const router = useRouter();
  useEffect(() => {
   const loadRole = async () => {
     const {
