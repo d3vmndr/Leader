@@ -26,15 +26,13 @@ const NAV_LINKS = [
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/districts', label: 'Districts', icon: MapPin },
   { href: '/rewards', label: 'Rewards', icon: Gift },
-
-  // only for normal users
   { href: '/notices', label: 'Notice', icon: Bell },
   { href: '/blogs', label: 'Blogs', icon: BookOpen },
 ];
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState(null);
+const [profile, setProfile] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,9 +98,10 @@ export default function Navbar() {
       }
     );
 
-return () => {
-  listener?.subscription?.unsubscribe();
-};
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   // ✅ filter links
   const filteredLinks = NAV_LINKS.filter((link) => {
@@ -193,7 +192,6 @@ return () => {
               </>
             ) : (
               <div className="flex items-center gap-3">
-                {/* ✅ FIX: show name instead of email */}
                 <span className="text-sm font-medium text-slate-700">
                   {profile?.full_name || 'User'}
                 </span>
@@ -255,7 +253,6 @@ return () => {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 w-full">
-                  {/* ✅ FIX HERE ALSO */}
                   <span className="text-sm text-center font-medium">
                     {profile?.full_name || 'User'}
                   </span>
