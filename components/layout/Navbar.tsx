@@ -24,11 +24,12 @@ const NAV_LINKS = [
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/districts', label: 'Districts', icon: MapPin },
   { href: '/rewards', label: 'Rewards', icon: Gift },
-];
-// NEW (only for normal users)
+
+  // NEW (only for normal users)
   { href: '/notices', label: 'Notice', icon: Gift },
   { href: '/blogs', label: 'Blogs', icon: Gift },
 ];
+
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
