@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Calendar, User, Search, Pin, Archive, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { Bell, Calendar, User, Search, Pin, Archive, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
