@@ -18,8 +18,9 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
+ const [role, setRole] = useState<string | null>(null);
 const [roleLoading, setRoleLoading] = useState(true);
+const [user, setUser] = useState<any>(null);
  const pathname = usePathname();
 const router = useRouter();
  useEffect(() => {
