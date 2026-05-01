@@ -62,7 +62,10 @@ const [roleLoading, setRoleLoading] = useState(true);
 
          {!roleLoading && (
   <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+           {NAV_LINKS.filter(link => {
+  if (link.href === '/dashboard' && !user) return false;
+  return true;
+}).map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
