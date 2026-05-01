@@ -1,174 +1,264 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
-  Trophy, Zap, Flame, Clock, TrendingUp, Award, Star,
-  MapPin, Calendar, ChevronRight, Target
+  Trophy,
+  Menu,
+  X,
+  Zap,
+  Gift,
+  MapPin,
+  LayoutDashboard,
+  LogIn,
+  UserPlus,
+  ShieldCheck,
+  Bell,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import {
-  DUMMY_PROFILE,
-  DUMMY_BADGES,
-  USER_BADGES_EARNED,
-  RECENT_CHALLENGES,
-  DUMMY_CHALLENGES
-} from '@/lib/dummy-data';
 
-/* ---------------- TIMER ---------------- */
-function CountdownTimer({ targetDate }: { targetDate: string }) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0, hours: 0, minutes: 0, seconds: 0
-  });
+const NAV_LINKS = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/districts', label: 'Districts', icon: MapPin },
+  { href: '/rewards', label: 'Rewards', icon: Gift },
+
+  // Only for normal users
+  { href: '/notices', label: 'Notice', icon: Bell },
+  { href: '/blogs', label: 'Blogs', icon: BookOpen },
+];
+
+export default function Navbar() {
+  const [user, setUser] = useState<any>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setRole(null);
+    setMobileOpen(false);
+    router.push('/');
+  };
 
   useEffect(() => {
-    const calc = () => {
-      const diff = new Date(targetDate).getTime() - Date.now();
-      if (diff <= 0) {
-        return setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const loadUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setUser(user ?? null);
+
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (data) setRole(data.role);
       }
 
-      setTimeLeft({
-        days: Math.floor(diff / 86400000),
-        hours: Math.floor((diff % 86400000) / 3600000),
-        minutes: Math.floor((diff % 3600000) / 60000),
-        seconds: Math.floor((diff % 60000) / 1000),
-      });
+      setRoleLoading(false);
     };
 
-    calc();
-    const id = setInterval(calc, 1000);
-    return () => clearInterval(id);
-  }, [targetDate]);
+    loadUser();
 
-  return (
-    <div className="flex items-center gap-2">
-      {['days', 'hours', 'minutes', 'seconds'].map((k, i) => (
-        <div key={k} className="flex items-center gap-2">
-          <div className="bg-white rounded-xl p-2 text-center min-w-[52px] shadow-sm border">
-            <div className="text-xl font-black text-blue-700">
-              {String((timeLeft as any)[k]).padStart(2, '0')}
-            </div>
-            <div className="text-[9px] text-slate-500 uppercase">
-              {k}
-            </div>
-          </div>
-          {i < 3 && <span className="text-blue-400 font-bold text-lg">:</span>}
-        </div>
-      ))}
-    </div>
-  );
-}
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-/* ---------------- MAIN ---------------- */
-export default function DashboardPage() {
-  const [profile, setProfile] = useState<any>(null);
+        if (currentUser) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
 
-  useEffect(() => {
-    async function loadProfile() {
-      // 1. get logged user
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
-
-      if (!user) return;
-
-      // 2. get profile from DB
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error || !data) {
-        console.log('PROFILE ERROR:', error);
-        return;
+          if (data) setRole(data.role);
+        } else {
+          setRole(null);
+        }
       }
+    );
 
-      setProfile(data);
-    }
-
-    loadProfile();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  // ⛔ important guard
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">
-        Loading dashboard...
-      </div>
-    );
-  }
+  // ✅ FILTER LOGIC (CORE FIX)
+  const filteredLinks = NAV_LINKS.filter((link) => {
+    if (link.href === '/dashboard' && !user) return false;
 
-  const upcomingChallenge = DUMMY_CHALLENGES.find(c => c.status === 'upcoming');
-  const earnedBadges = DUMMY_BADGES.filter(b => USER_BADGES_EARNED.includes(b.id));
-  const lockedBadges = DUMMY_BADGES.filter(b => !USER_BADGES_EARNED.includes(b.id));
+    // Hide Notice & Blogs for admin/superadmin
+    if (
+      (link.href === '/notices' || link.href === '/blogs') &&
+      (role === 'admin' || role === 'superadmin')
+    ) {
+      return false;
+    }
 
-  const streakPct = Math.min((profile.streak / 10) * 100, 100);
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16">
 
-        {/* HEADER */}
-        <div className="mb-8">
-          <p className="text-sm text-slate-500">Welcome back,</p>
-          <h1 className="text-3xl font-black">
-            {profile.full_name} 👋
-          </h1>
-          <p className="text-sm text-slate-500">
-            {profile.school_name}
-          </p>
-        </div>
-
-        {/* STATS */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Stat icon={Target} label="Score" value={profile.total_score} />
-          <Stat icon={Trophy} label="National Rank" value={`#${profile.national_rank}`} />
-          <Stat icon={MapPin} label="District Rank" value={`#${profile.district_rank}`} />
-          <Stat icon={Flame} label="Streak" value={`${profile.streak} weeks`} />
-        </div>
-
-        {/* CHALLENGE */}
-        {upcomingChallenge && (
-          <div className="bg-blue-900 text-white rounded-2xl p-6 mb-8">
-            <h2 className="text-xl font-bold mb-2">
-              {upcomingChallenge.title}
-            </h2>
-            <CountdownTimer targetDate={upcomingChallenge.scheduled_date} />
-          </div>
-        )}
-
-        {/* BADGES */}
-        <div className="bg-white rounded-2xl p-6 mb-8">
-          <h3 className="font-bold mb-4">Badges</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {earnedBadges.map(b => (
-              <div key={b.id} className="p-3 bg-amber-50 rounded-xl text-center">
-                {b.name}
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="font-bold text-blue-900 text-sm">
+                SmartLeague
               </div>
-            ))}
-            {lockedBadges.map(b => (
-              <div key={b.id} className="p-3 bg-slate-100 rounded-xl text-center opacity-50">
-                {b.name}
+              <div className="text-[10px] text-amber-500 uppercase">
+                Nepal
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </Link>
 
+          {/* Desktop Nav */}
+          {!roleLoading && (
+            <nav className="hidden md:flex items-center gap-1">
+              {filteredLinks.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium',
+                    pathname === href
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
+              ))}
+
+              {(role === 'admin' || role === 'superadmin') && (
+                <Link
+                  href="/admin"
+                  className={cn(
+                    'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium',
+                    pathname === '/admin'
+                      ? 'bg-orange-50 text-orange-700'
+                      : 'text-slate-500 hover:bg-orange-50'
+                  )}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin
+                </Link>
+              )}
+            </nav>
+          )}
+
+          {/* Right */}
+          <div className="hidden md:flex items-center gap-2">
+            {!user ? (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    <LogIn className="w-4 h-4 mr-1.5" />
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">
+                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    Join Free
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">
+                  {user?.email}
+                </span>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Toggle */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
 
-/* ---------------- SMALL COMPONENT ---------------- */
-function Stat({ icon: Icon, label, value }: any) {
-  return (
-    <div className="bg-white p-4 rounded-xl border">
-      <Icon className="w-5 h-5 mb-2 text-blue-600" />
-      <div className="text-lg font-bold">{value}</div>
-      <div className="text-xs text-slate-500">{label}</div>
-    </div>
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-white">
+          <div className="px-4 py-3 space-y-1">
+
+            {filteredLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </Link>
+            ))}
+
+            {(role === 'admin' || role === 'superadmin') && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin Panel
+              </Link>
+            )}
+
+            <div className="pt-2 border-t flex gap-2">
+              {!user ? (
+                <>
+                  <Link href="/login" className="flex-1">
+                    <Button variant="outline" className="w-full">Login</Button>
+                  </Link>
+                  <Link href="/register" className="flex-1">
+                    <Button className="w-full">Join Free</Button>
+                  </Link>
+                </>
+              ) : (
+                <div className="flex flex-col gap-2 w-full">
+                  <span className="text-sm text-center">
+                    {user?.email}
+                  </span>
+                  <Button variant="outline" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+    </header>
   );
 }
