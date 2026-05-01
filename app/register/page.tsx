@@ -110,8 +110,8 @@ export default function RegisterPage() {
       </div>
 
       {/* FORM */}
-      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-        <div className="w-full max-w-lg py-8">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md mx-auto py-8">
 
           <div className="mb-6">
             <h1 className="text-2xl font-black text-slate-900 mb-1">
