@@ -173,11 +173,12 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-          <div className="flex items-center gap-2">
-  <Button variant="outline" size="sm" onClick={handleLogout}>
-    Logout
-  </Button>
-</div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Logout
+              </Button>
+            )}
+          </div>
+
           {/* Mobile Toggle */}
           <button
             className="md:hidden p-2 rounded-lg"
@@ -230,14 +231,9 @@ export default function Navbar() {
                   </Link>
                 </>
               ) : (
-                <div className="flex flex-col gap-2 w-full">
-                  <span className="text-sm text-center">
-                    {user?.email}
-                  </span>
-                  <Button variant="outline" onClick={handleLogout}>
-                    Logout
-                  </Button>
-                </div>
+                <Button variant="outline" className="w-full" onClick={handleLogout}>
+                  Logout
+                </Button>
               )}
             </div>
 
