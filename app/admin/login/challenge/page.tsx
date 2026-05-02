@@ -123,7 +123,16 @@ export default function ChallengePage() {
             <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">You have <strong>30 minutes</strong> to answer all {questions.length} questions. The timer starts once you click begin.</p>
           </div>
-          <Button onClick={() => setShowFairPlay(false)} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl">
+          <Button onClick={async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    router.push('/login?redirect=/challenge');
+    return;
+  }
+
+  setShowFairPlay(false);
+}}className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl">
             I Understand — Begin Challenge
           </Button>
         </div>
