@@ -26,7 +26,7 @@ const NAV_LINKS = [
   { href: '/dashboard/notice', label: 'Notices', icon: Bell },
   { href: '/dashboard/blogs', label: 'Blogs', icon: BookOpen },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { href: '/districts', label: 'Districts', icon: MapPin },
+  { href: '/challenge', label: 'Challenge', icon: Zap },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 
