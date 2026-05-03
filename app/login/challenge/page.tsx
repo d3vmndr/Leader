@@ -1,4 +1,62 @@
-ng, string>>({});
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Clock, Shield, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { SAMPLE_QUESTIONS } from '@/lib/dummy-data';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+
+const CHALLENGE_DURATION = 30 * 60;
+
+const ALL_QUESTIONS = [
+  ...SAMPLE_QUESTIONS,
+  {
+    id: 'q-006', challenge_id: 'ch-001', question_text: 'You witness a friend cheating during an exam. What do you do?', question_type: 'ethical' as const, order_index: 6,
+    options: [
+      { id: 'o-006a', question_id: 'q-006', option_label: 'A' as const, option_text: 'Stay silent to protect your friendship', selection_count: 20, score: 0.20 },
+      { id: 'o-006b', question_id: 'q-006', option_label: 'B' as const, option_text: 'Quietly tell them to stop right away', selection_count: 35, score: 0.35 },
+      { id: 'o-006c', question_id: 'q-006', option_label: 'C' as const, option_text: 'Report to the teacher immediately', selection_count: 28, score: 0.28 },
+      { id: 'o-006d', question_id: 'q-006', option_label: 'D' as const, option_text: 'Join in since others might too', selection_count: 17, score: 0.17 },
+    ],
+  },
+  {
+    id: 'q-007', challenge_id: 'ch-001', question_text: 'Your group project is failing. Two days left. Best approach?', question_type: 'leadership' as const, order_index: 7,
+    options: [
+      { id: 'o-007a', question_id: 'q-007', option_label: 'A' as const, option_text: 'Work all night and do it all yourself', selection_count: 15, score: 0.15 },
+      { id: 'o-007b', question_id: 'q-007', option_label: 'B' as const, option_text: 'Hold an emergency team meeting and divide tasks', selection_count: 50, score: 0.50 },
+      { id: 'o-007c', question_id: 'q-007', option_label: 'C' as const, option_text: 'Ask teacher for an extension', selection_count: 22, score: 0.22 },
+      { id: 'o-007d', question_id: 'q-007', option_label: 'D' as const, option_text: 'Submit what you have with an apology note', selection_count: 13, score: 0.13 },
+    ],
+  },
+  {
+    id: 'q-008', challenge_id: 'ch-001', question_text: 'What do you think matters most in a true friendship?', question_type: 'opinion' as const, order_index: 8,
+    options: [
+      { id: 'o-008a', question_id: 'q-008', option_label: 'A' as const, option_text: 'Honest communication at all times', selection_count: 40, score: 0.40 },
+      { id: 'o-008b', question_id: 'q-008', option_label: 'B' as const, option_text: 'Shared interests and hobbies', selection_count: 18, score: 0.18 },
+      { id: 'o-008c', question_id: 'q-008', option_label: 'C' as const, option_text: 'Being there through hard times', selection_count: 32, score: 0.32 },
+      { id: 'o-008d', question_id: 'q-008', option_label: 'D' as const, option_text: 'Having fun and making memories together', selection_count: 10, score: 0.10 },
+    ],
+  },
+];
+
+const QUESTION_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  emotional_intelligence: { label: 'Emotional Intelligence', color: 'bg-pink-100 text-pink-700' },
+  social_reasoning: { label: 'Social Reasoning', color: 'bg-blue-100 text-blue-700' },
+  analytical: { label: 'Analytical', color: 'bg-teal-100 text-teal-700' },
+  ethical: { label: 'Ethical Choice', color: 'bg-orange-100 text-orange-700' },
+  curiosity: { label: 'Curiosity', color: 'bg-sky-100 text-sky-700' },
+  leadership: { label: 'Leadership', color: 'bg-emerald-100 text-emerald-700' },
+  creative: { label: 'Creative', color: 'bg-violet-100 text-violet-700' },
+  opinion: { label: 'Opinion', color: 'bg-amber-100 text-amber-700' },
+};
+
+export default function ChallengePage() {
+  const router = useRouter();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
   const [submitted, setSubmitted] = useState(false);
   const [showFairPlay, setShowFairPlay] = useState(true);
@@ -67,9 +125,9 @@ ng, string>>({});
             <p className="text-xs text-amber-800">You have <strong>30 minutes</strong> to answer all {questions.length} questions. The timer starts once you click begin.</p>
           </div>
           <Button onClick={async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-if (!session?.user) {
+  if (!user) {
     router.push('/login?redirect=/challenge');
     return;
   }
@@ -222,7 +280,7 @@ if (!session?.user) {
         {answeredCount < questions.length && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-amber-700 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{questions.length - answeredCount} questions unanswered. You can still submit, but unanswered questions score 0.</span>
+            <span>{questions.length - answeredCount} questions unanswered. You can still submit, but unanswered questions score 0.</span> 
           </div>
         )}
       </div>
