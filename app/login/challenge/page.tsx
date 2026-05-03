@@ -54,6 +54,7 @@ const QUESTION_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function ChallengePage() {
+  console.log('Challenge page loaded');
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
