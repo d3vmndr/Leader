@@ -48,42 +48,63 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(DUMMY_PROFILE);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadProfile() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (authError || !user) {
+          setProfile(DUMMY_PROFILE);
           setLoading(false);
           return;
         }
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, school_name, player_type, district, province')
+          .select('full_name, school_name, player_type, district, province, total_score, national_rank, district_rank, streak')
           .eq('id', user.id)
           .maybeSingle();
 
-        if (data) {
+        if (!mounted) return;
+
+        if (error) {
+          console.error('Profile fetch error:', error);
+          setProfile(DUMMY_PROFILE);
+        } else if (data) {
           setProfile({
             ...DUMMY_PROFILE,
             full_name: data.full_name || 'User',
             school_name: data.school_name || 'School',
             player_type: data.player_type || 'Student',
+            district: data.district || DUMMY_PROFILE.district,
+            total_score: data.total_score ?? DUMMY_PROFILE.total_score,
+            national_rank: data.national_rank ?? DUMMY_PROFILE.national_rank,
+            district_rank: data.district_rank ?? DUMMY_PROFILE.district_rank,
+            streak: data.streak ?? DUMMY_PROFILE.streak,
           });
         } else {
           setProfile(DUMMY_PROFILE);
         }
       } catch (err) {
-        setProfile(DUMMY_PROFILE);
+        console.error('Dashboard load error:', err);
+        if (mounted) setProfile(DUMMY_PROFILE);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
 
     loadProfile();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (loading) {

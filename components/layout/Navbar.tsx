@@ -50,49 +50,63 @@ export default function Navbar() {
 
   // 🔹 Auth + role loading
   useEffect(() => {
+    let mounted = true;
+
     const loadUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      setUser(user ?? null);
+        if (!mounted) return;
+        setUser(user ?? null);
 
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        if (user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
 
-        if (data) setRole(data.role);
+          if (mounted && data) setRole(data.role);
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+      } finally {
+        if (mounted) setRoleLoading(false);
       }
-
-      setRoleLoading(false);
     };
 
     loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (!mounted) return;
+
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
-            .single();
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', currentUser.id)
+              .maybeSingle();
 
-          if (data) setRole(data.role);
+            if (mounted && data) setRole(data.role);
+          } catch (err) {
+            console.error('Profile fetch error:', err);
+          }
         } else {
-          setRole(null);
+          if (mounted) setRole(null);
         }
       }
     );
 
     return () => {
-      listener.subscription.unsubscribe();
+      mounted = false;
+      listener?.subscription.unsubscribe();
     };
   }, []);
 

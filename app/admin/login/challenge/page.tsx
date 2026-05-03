@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SAMPLE_QUESTIONS } from '@/lib/dummy-data';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 const CHALLENGE_DURATION = 30 * 60;
 
