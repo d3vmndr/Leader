@@ -61,7 +61,7 @@ const [profile, setProfile] = useState<any>(null);
         if (!mounted) return;
 
         if (authError || !user) {
-          setProfile(DUMMY_PROFILE);
+          setProfile(null);
           setLoading(false);
           return;
         }
