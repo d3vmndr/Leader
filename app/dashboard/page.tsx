@@ -6,7 +6,7 @@ import { Trophy, Zap, Flame, Clock, TrendingUp, Award, Star, MapPin, Calendar, C
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-// import { DUMMY_PROFILE, DUMMY_BADGES, USER_BADGES_EARNED, RECENT_CHALLENGES, DUMMY_CHALLENGES } from '@/lib/dummy-data';
+import { DUMMY_PROFILE, DUMMY_BADGES, USER_BADGES_EARNED, RECENT_CHALLENGES, DUMMY_CHALLENGES } from '@/lib/dummy-data';
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -48,7 +48,7 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
-const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(DUMMY_PROFILE);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ const [profile, setProfile] = useState<any>(null);
         if (!mounted) return;
 
         if (authError || !user) {
-          setProfile(null);
+          setProfile(DUMMY_PROFILE);
           setLoading(false);
           return;
         }
@@ -75,16 +75,26 @@ const [profile, setProfile] = useState<any>(null);
         if (!mounted) return;
 
         if (error) {
-  console.error('Profile fetch error:', error);
-  setProfile(null);
-} else if (data) {
-  setProfile(data);
-} else {
-  setProfile(null);
-}
+          console.error('Profile fetch error:', error);
+          setProfile(DUMMY_PROFILE);
+        } else if (data) {
+          setProfile({
+            ...DUMMY_PROFILE,
+            full_name: data.full_name || 'User',
+            school_name: data.school_name || 'School',
+            player_type: data.player_type || 'Student',
+            district: data.district || DUMMY_PROFILE.district,
+            total_score: data.total_score ?? DUMMY_PROFILE.total_score,
+            national_rank: data.national_rank ?? DUMMY_PROFILE.national_rank,
+            district_rank: data.district_rank ?? DUMMY_PROFILE.district_rank,
+            streak: data.streak ?? DUMMY_PROFILE.streak,
+          });
+        } else {
+          setProfile(DUMMY_PROFILE);
+        }
       } catch (err) {
         console.error('Dashboard load error:', err);
-        if (mounted) setProfile(null);
+        if (mounted) setProfile(DUMMY_PROFILE);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -108,9 +118,9 @@ const [profile, setProfile] = useState<any>(null);
     );
   }
 
- if (!profile) {
-  return <div>No profile found. Please complete registration.</div>;
-}
+  if (!profile) {
+    return null;
+  }
 
   const upcomingChallenge = DUMMY_CHALLENGES.find((c) => c.status === 'upcoming');
   const earnedBadges = DUMMY_BADGES.filter((b) => USER_BADGES_EARNED.includes(b.id));
@@ -151,7 +161,7 @@ const [profile, setProfile] = useState<any>(null);
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Target, label: 'Total Score',value: (profile.total_score ?? 0).toFixed(2), sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
+            { icon: Target, label: 'Total Score', value: profile.total_score.toFixed(2), sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
             { icon: Trophy, label: 'National Rank', value: `#${profile.national_rank}`, sub: `of 12,400+ students`, color: 'from-amber-400 to-orange-500', text: 'text-white' },
             { icon: MapPin, label: 'District Rank', value: `#${profile.district_rank}`, sub: profile.district, color: 'from-emerald-500 to-teal-600', text: 'text-white' },
             { icon: Flame, label: 'Streak', value: `${profile.streak} weeks`, sub: 'Keep it going!', color: 'from-red-500 to-rose-600', text: 'text-white' },

@@ -54,28 +54,7 @@ const QUESTION_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function ChallengePage() {
-  console.log('Challenge page loaded');
   const router = useRouter();
-  useEffect(() => {
-  const loadProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    console.log('AUTH USER:', user);
-
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    console.log('PROFILE DATA:', data);
-    console.log('PROFILE ERROR:', error);
-  };
-
-  loadProfile();
-}, []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
