@@ -108,9 +108,9 @@ const [profile, setProfile] = useState<any>(null);
     );
   }
 
-  if (!profile) {
-    return null;
-  }
+ if (!profile) {
+  return <div>No profile found. Please complete registration.</div>;
+}
 
   const upcomingChallenge = DUMMY_CHALLENGES.find((c) => c.status === 'upcoming');
   const earnedBadges = DUMMY_BADGES.filter((b) => USER_BADGES_EARNED.includes(b.id));
