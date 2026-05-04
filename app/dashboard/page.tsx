@@ -151,7 +151,7 @@ const [profile, setProfile] = useState<any>(null);
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Target, label: 'Total Score', value: profile.total_score.toFixed(2), sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
+            { icon: Target, label: 'Total Score',value: (profile.total_score ?? 0).toFixed(2), sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
             { icon: Trophy, label: 'National Rank', value: `#${profile.national_rank}`, sub: `of 12,400+ students`, color: 'from-amber-400 to-orange-500', text: 'text-white' },
             { icon: MapPin, label: 'District Rank', value: `#${profile.district_rank}`, sub: profile.district, color: 'from-emerald-500 to-teal-600', text: 'text-white' },
             { icon: Flame, label: 'Streak', value: `${profile.streak} weeks`, sub: 'Keep it going!', color: 'from-red-500 to-rose-600', text: 'text-white' },
