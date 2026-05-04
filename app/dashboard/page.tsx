@@ -84,7 +84,7 @@ const [profile, setProfile] = useState<any>(null);
 }
       } catch (err) {
         console.error('Dashboard load error:', err);
-        if (mounted) setProfile(DUMMY_PROFILE);
+        if (mounted) setProfile(null);
       } finally {
         if (mounted) setLoading(false);
       }
