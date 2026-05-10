@@ -6,7 +6,6 @@ import { Trophy, Zap, Flame, Clock, TrendingUp, Award, Star, MapPin, Calendar, C
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-import { DUMMY_PROFILE, DUMMY_BADGES, USER_BADGES_EARNED, RECENT_CHALLENGES, DUMMY_CHALLENGES } from '@/lib/dummy-data';
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -48,63 +47,101 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 }
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<any>(DUMMY_PROFILE);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [earnedBadges, setEarnedBadges] = useState<any[]>([]);
+  const [allBadges, setAllBadges] = useState<any[]>([]);
+  const [recentChallenges, setRecentChallenges] = useState<any[]>([]);
+  const [upcomingChallenge, setUpcomingChallenge] = useState<any>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadProfile() {
+    async function fetchDashboardData() {
       try {
+        // 1. Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (!mounted) return;
-
         if (authError || !user) {
-          setProfile(DUMMY_PROFILE);
-          setLoading(false);
+          if (mounted) setLoading(false);
           return;
         }
 
-        const { data, error } = await supabase
+        // 2. Fetch profile
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('full_name, school_name, player_type, district, province, total_score, national_rank, district_rank, streak')
           .eq('id', user.id)
           .maybeSingle();
 
-        if (!mounted) return;
+        if (profileError) throw profileError;
+        if (mounted) setProfile(profileData);
 
-        if (error) {
-          console.error('Profile fetch error:', error);
-          setProfile(DUMMY_PROFILE);
-        } else if (data) {
-          setProfile({
-            ...DUMMY_PROFILE,
-            full_name: data.full_name || 'User',
-            school_name: data.school_name || 'School',
-            player_type: data.player_type || 'Student',
-            district: data.district || DUMMY_PROFILE.district,
-            total_score: data.total_score ?? DUMMY_PROFILE.total_score,
-            national_rank: data.national_rank ?? DUMMY_PROFILE.national_rank,
-            district_rank: data.district_rank ?? DUMMY_PROFILE.district_rank,
-            streak: data.streak ?? DUMMY_PROFILE.streak,
-          });
-        } else {
-          setProfile(DUMMY_PROFILE);
-        }
+        // 3. Fetch all badges
+        const { data: badgesData, error: badgesError } = await supabase
+          .from('badges')
+          .select('*')
+          .order('order_index', { ascending: true }); // assume order_index exists or just any order
+
+        if (badgesError) throw badgesError;
+        if (mounted) setAllBadges(badgesData || []);
+
+        // 4. Fetch user's earned badge IDs
+        const { data: userBadgesData, error: userBadgesError } = await supabase
+          .from('user_badges')
+          .select('badge_id')
+          .eq('user_id', user.id);
+
+        if (userBadgesError) throw userBadgesError;
+
+        const earnedIds = new Set((userBadgesData || []).map(ub => ub.badge_id));
+        const earned = (badgesData || []).filter(badge => earnedIds.has(badge.id));
+        if (mounted) setEarnedBadges(earned);
+
+        // 5. Fetch recent challenge results
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('challenge_results')
+          .select(`
+            score,
+            rank,
+            completed_at,
+            challenges (title)
+          `)
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false })
+          .limit(5);
+
+        if (resultsError) throw resultsError;
+
+        const formattedResults = (resultsData || []).map((item: any) => ({
+          challenge: item.challenges?.title || 'Challenge',
+          date: new Date(item.completed_at).toLocaleDateString(),
+          score: item.score,
+          rank: item.rank,
+        }));
+        if (mounted) setRecentChallenges(formattedResults);
+
+        // 6. Fetch upcoming challenge
+        const { data: upcomingData, error: upcomingError } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('status', 'upcoming')
+          .gte('scheduled_date', new Date().toISOString())
+          .order('scheduled_date', { ascending: true })
+          .limit(1);
+
+        if (upcomingError) throw upcomingError;
+        if (mounted) setUpcomingChallenge(upcomingData?.[0] || null);
+
       } catch (err) {
-        console.error('Dashboard load error:', err);
-        if (mounted) setProfile(DUMMY_PROFILE);
+        console.error('Dashboard data fetch error:', err);
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
-    loadProfile();
+    fetchDashboardData();
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   if (loading) {
@@ -112,20 +149,32 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-4xl mb-3">⏳</div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
+  // If user is not logged in or profile missing
   if (!profile) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-5xl mb-4">🔐</div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Not signed in</h2>
+          <p className="text-slate-600 mb-6">Please sign in to view your dashboard and challenge progress.</p>
+          <Link href="/login">
+            <Button className="bg-blue-600 hover:bg-blue-700">Go to Login</Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const upcomingChallenge = DUMMY_CHALLENGES.find((c) => c.status === 'upcoming');
-  const earnedBadges = DUMMY_BADGES.filter((b) => USER_BADGES_EARNED.includes(b.id));
-  const lockedBadges = DUMMY_BADGES.filter((b) => !USER_BADGES_EARNED.includes(b.id));
+  const lockedBadges = allBadges.filter(badge => !earnedBadges.some(eb => eb.id === badge.id));
+  const streakPct = Math.min((profile.streak / 10) * 100, 100);
 
+  // Map icon strings from badges table to actual emoji (or you can store emoji directly in DB)
   const badgeIconMap: Record<string, string> = {
     award: '🏅',
     trophy: '🏆',
@@ -137,8 +186,6 @@ export default function DashboardPage() {
     shield: '🛡️',
     lightbulb: '💡',
   };
-
-  const streakPct = Math.min((profile.streak / 10) * 100, 100);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -159,12 +206,13 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Target, label: 'Total Score', value: profile.total_score.toFixed(2), sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
-            { icon: Trophy, label: 'National Rank', value: `#${profile.national_rank}`, sub: `of 12,400+ students`, color: 'from-amber-400 to-orange-500', text: 'text-white' },
-            { icon: MapPin, label: 'District Rank', value: `#${profile.district_rank}`, sub: profile.district, color: 'from-emerald-500 to-teal-600', text: 'text-white' },
-            { icon: Flame, label: 'Streak', value: `${profile.streak} weeks`, sub: 'Keep it going!', color: 'from-red-500 to-rose-600', text: 'text-white' },
+            { icon: Target, label: 'Total Score', value: profile.total_score?.toFixed(2) ?? '0.00', sub: 'All time points', color: 'from-blue-500 to-blue-700', text: 'text-white' },
+            { icon: Trophy, label: 'National Rank', value: `#${profile.national_rank ?? '—'}`, sub: `of 12,400+ students`, color: 'from-amber-400 to-orange-500', text: 'text-white' },
+            { icon: MapPin, label: 'District Rank', value: `#${profile.district_rank ?? '—'}`, sub: profile.district ?? 'District', color: 'from-emerald-500 to-teal-600', text: 'text-white' },
+            { icon: Flame, label: 'Streak', value: `${profile.streak ?? 0} weeks`, sub: 'Keep it going!', color: 'from-red-500 to-rose-600', text: 'text-white' },
           ].map(({ icon: Icon, label, value, sub, color, text }) => (
             <div key={label} className={`bg-gradient-to-br ${color} rounded-2xl p-5 shadow-sm`}>
               <div className="flex items-start justify-between mb-3">
@@ -180,6 +228,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Upcoming Challenge Card */}
           {upcomingChallenge ? (
             <div className="lg:col-span-2 bg-gradient-to-br from-blue-900 to-blue-950 rounded-2xl p-6 text-white">
               <div className="flex items-center gap-2 mb-4">
@@ -208,45 +257,48 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Streak Card */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500" />
               Participation Streak
             </h3>
             <div className="text-center mb-4">
-              <div className="text-4xl font-black text-slate-900">{profile.streak}</div>
+              <div className="text-4xl font-black text-slate-900">{profile.streak ?? 0}</div>
               <div className="text-sm text-slate-500">week{profile.streak !== 1 ? 's' : ''} in a row</div>
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full mb-3 overflow-hidden">
               <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${streakPct}%` }} />
             </div>
-            <div className="text-xs text-slate-500 text-center mb-4">{10 - profile.streak} more weeks for Streak Master badge</div>
+            <div className="text-xs text-slate-500 text-center mb-4">{Math.max(0, 10 - (profile.streak ?? 0))} more weeks for Streak Master badge</div>
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 7 }, (_, i) => (
-                <div key={i} className={`h-8 rounded-md ${i < profile.streak % 7 ? 'bg-emerald-400' : 'bg-slate-100'} transition-colors`} />
+                <div key={i} className={`h-8 rounded-md ${i < (profile.streak ?? 0) % 7 ? 'bg-emerald-400' : 'bg-slate-100'} transition-colors`} />
               ))}
             </div>
             <div className="text-xs text-slate-400 text-center mt-2">Last 7 challenges</div>
           </div>
         </div>
 
+        {/* Badges & Recent History */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Badges Section */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-slate-900 flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-500" />
                 My Badges
               </h3>
-              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">{earnedBadges.length}/{DUMMY_BADGES.length} Earned</Badge>
+              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">{earnedBadges.length}/{allBadges.length} Earned</Badge>
             </div>
             <div className="grid grid-cols-3 gap-3 mb-4">
-              {earnedBadges.map((badge) => (
+              {earnedBadges.slice(0, 6).map((badge) => (
                 <div key={badge.id} className="text-center p-3 bg-amber-50 rounded-xl border border-amber-100 group hover-lift">
                   <div className="text-2xl mb-1">{badgeIconMap[badge.icon] ?? '🏅'}</div>
                   <div className="text-xs font-semibold text-slate-700 leading-tight">{badge.name}</div>
                 </div>
               ))}
-              {lockedBadges.slice(0, 3).map((badge) => (
+              {lockedBadges.slice(0, 6).map((badge) => (
                 <div key={badge.id} className="text-center p-3 bg-slate-50 rounded-xl border border-slate-200 opacity-50">
                   <div className="text-2xl mb-1 grayscale">{badgeIconMap[badge.icon] ?? '🏅'}</div>
                   <div className="text-xs font-semibold text-slate-400 leading-tight">{badge.name}</div>
@@ -256,6 +308,7 @@ export default function DashboardPage() {
             <p className="text-xs text-slate-400 text-center">{lockedBadges.length} more badges to unlock</p>
           </div>
 
+          {/* Recent History Section */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-slate-900 flex items-center gap-2">
@@ -266,33 +319,40 @@ export default function DashboardPage() {
                 <Button variant="ghost" size="sm" className="text-blue-600 text-xs">View All <ChevronRight className="w-3 h-3 ml-0.5" /></Button>
               </Link>
             </div>
-            <div className="space-y-3">
-              {RECENT_CHALLENGES.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                  <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Star className="w-4 h-4 text-blue-600" />
+            {recentChallenges.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-sm">
+                No challenge attempts yet. Join a challenge to see your history!
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentChallenges.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-slate-900 truncate">{item.challenge}</div>
+                      <div className="text-xs text-slate-400">{item.date}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-bold text-blue-700">{item.score.toFixed(2)}</div>
+                      <div className="text-xs text-slate-400">Rank #{item.rank}</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-slate-900 truncate">{item.challenge}</div>
-                    <div className="text-xs text-slate-400">{item.date}</div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-sm font-bold text-blue-700">{item.score.toFixed(2)}</div>
-                    <div className="text-xs text-slate-400">Rank #{item.rank}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* National Rank CTA */}
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-400 flex items-center justify-center flex-shrink-0">
               <Trophy className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900">You&apos;re ranked <span className="text-amber-600">#{profile.national_rank}</span> nationally!</h3>
+              <h3 className="font-bold text-slate-900">You&apos;re ranked <span className="text-amber-600">#{profile.national_rank ?? '—'}</span> nationally!</h3>
               <p className="text-sm text-slate-600">Keep competing to climb into the Top 10 and win monthly prizes.</p>
             </div>
           </div>
