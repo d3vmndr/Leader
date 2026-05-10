@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Globe, Shield } from 'lucide-react';
+import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Target, Globe, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DUMMY_LEADERBOARD, DUMMY_DISTRICT_STATS } from '@/lib/dummy-data';
@@ -90,7 +90,20 @@ function HowItWorksSection() {
             </div>
           ))}
         </div>
-       </div>
+        <div className="mt-10 p-6 bg-blue-50 rounded-2xl border border-blue-100 max-w-3xl mx-auto">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 mb-1">Scoring Value</h4>
+              <p className="text-sm text-slate-600">
+               Scoring Value will be shown here.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
