@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Target, Globe, Shield } from 'lucide-react';
+import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Globe, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DUMMY_LEADERBOARD, DUMMY_DISTRICT_STATS } from '@/lib/dummy-data';
