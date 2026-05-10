@@ -90,20 +90,7 @@ function HowItWorksSection() {
             </div>
           ))}
         </div>
-        <div className="mt-10 p-6 bg-blue-50 rounded-2xl border border-blue-100 max-w-3xl mx-auto">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Target className="w-5 h-5 text-blue-700" />
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-1">Scoring Formula</h4>
-              <p className="text-sm text-slate-600">
-                If 38 out of 100 students chose Option B, then Option B earns <strong>0.38 points</strong>. Select wisely — the crowd&apos;s thinking decides your score. Your final score = sum of all question points.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+       </div>
     </section>
   );
 }
