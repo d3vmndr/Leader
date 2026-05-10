@@ -1,3 +1,17 @@
+'use client';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
+export default function TestPage() {
+  useEffect(() => {
+    async function test() {
+      const { data, error } = await supabase.from('profiles').select('*').limit(1);
+      console.log('Supabase test:', { data, error });
+    }
+    test();
+  }, []);
+  return <div>Check console</div>;
+}
 import Link from 'next/link';
 import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Target, Globe, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
