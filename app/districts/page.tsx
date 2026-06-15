@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { MapPin, Users, TrendingUp, Trophy, Search, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Users, TrendingUp, Trophy, Search, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { DUMMY_DISTRICT_STATS } from '@/lib/dummy-data';
+import { db } from '@/lib/db';
 import { cn } from '@/lib/utils';
 
 const PROVINCE_COLORS: Record<string, string> = {
@@ -18,32 +18,48 @@ const PROVINCE_COLORS: Record<string, string> = {
   'Sudurpashchim Province': 'bg-red-100 text-red-700 border-red-200',
 };
 
-const ALL_DISTRICTS = [
-  ...DUMMY_DISTRICT_STATS,
-  { id: 'ds-011', district_name: 'Bhaktapur', province: 'Bagmati Province', total_students: 198, active_students: 176, total_points: 1876.23, average_score: 9.47, national_rank: 11 },
-  { id: 'ds-012', district_name: 'Pokhara (Kaski)', province: 'Gandaki Province', total_students: 412, active_students: 387, total_points: 4891.34, average_score: 11.87, national_rank: 12 },
-  { id: 'ds-013', district_name: 'Jhapa', province: 'Koshi Province', total_students: 287, active_students: 254, total_points: 3019.88, average_score: 10.52, national_rank: 13 },
-  { id: 'ds-014', district_name: 'Banke', province: 'Lumbini Province', total_students: 156, active_students: 134, total_points: 1342.56, average_score: 8.61, national_rank: 14 },
-  { id: 'ds-015', district_name: 'Kailali', province: 'Sudurpashchim Province', total_students: 134, active_students: 112, total_points: 987.44, average_score: 7.37, national_rank: 15 },
-];
-
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function DistrictsPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [districtsList, setDistrictsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = ALL_DISTRICTS.filter((d) => {
+  useEffect(() => {
+    async function loadDistricts() {
+      try {
+        const data = await db.getDistrictStats();
+        setDistrictsList(data || []);
+      } catch (err) {
+        console.error('Failed to load districts:', err);
+        setDistrictsList([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDistricts();
+  }, []);
+
+  const filtered = districtsList.filter((d) => {
     const matchSearch = !search || d.district_name.toLowerCase().includes(search.toLowerCase()) || d.province.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'all' || d.province === filter;
     return matchSearch && matchFilter;
   });
 
-  const provinces = Array.from(new Set(ALL_DISTRICTS.map((d) => d.province)));
+  const provinces = Array.from(new Set(districtsList.map((d) => d.province)));
 
-  const topDistrict = ALL_DISTRICTS[0];
-  const totalStudents = ALL_DISTRICTS.reduce((sum, d) => sum + d.total_students, 0);
-  const totalActive = ALL_DISTRICTS.reduce((sum, d) => sum + d.active_students, 0);
+  const topDistrict = districtsList[0];
+  const totalStudents = districtsList.reduce((sum, d) => sum + (d.total_students || 0), 0);
+  const totalActive = districtsList.reduce((sum, d) => sum + (d.active_students || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -63,9 +79,9 @@ export default function DistrictsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { icon: Trophy, label: 'Top District This Week', value: topDistrict.district_name, sub: `${topDistrict.average_score.toFixed(2)} avg score`, color: 'from-amber-400 to-orange-500' },
+            { icon: Trophy, label: 'Top District This Week', value: topDistrict?.district_name || 'N/A', sub: topDistrict ? `${topDistrict.average_score.toFixed(2)} avg score` : 'No data', color: 'from-amber-400 to-orange-500' },
             { icon: Users, label: 'Total Students', value: totalStudents.toLocaleString(), sub: 'Across all districts', color: 'from-blue-500 to-blue-700' },
-            { icon: Star, label: 'Active This Week', value: totalActive.toLocaleString(), sub: `${Math.round((totalActive / totalStudents) * 100)}% participation`, color: 'from-emerald-500 to-teal-600' },
+            { icon: Star, label: 'Active This Week', value: totalActive.toLocaleString(), sub: totalStudents > 0 ? `${Math.round((totalActive / totalStudents) * 100)}% participation` : '0% participation', color: 'from-emerald-500 to-teal-600' },
           ].map(({ icon: Icon, label, value, sub, color }) => (
             <div key={label} className={`bg-gradient-to-br ${color} rounded-2xl p-5 text-white`}>
               <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center mb-3">
@@ -79,12 +95,12 @@ export default function DistrictsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {ALL_DISTRICTS.slice(0, 3).map((district, i) => (
+          {districtsList.slice(0, 3).map((district: any, i: number) => (
             <div key={district.id} className={cn(
               'rounded-2xl p-6 border text-center',
               i === 0 ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300 shadow-lg' :
-              i === 1 ? 'bg-gradient-to-br from-slate-50 to-gray-100 border-slate-300' :
-              'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300'
+                i === 1 ? 'bg-gradient-to-br from-slate-50 to-gray-100 border-slate-300' :
+                  'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300'
             )}>
               <div className="text-4xl mb-3 rank-float">{MEDALS[i]}</div>
               <h3 className="text-xl font-black text-slate-900 mb-1">{district.district_name}</h3>

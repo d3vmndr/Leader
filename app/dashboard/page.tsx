@@ -6,6 +6,7 @@ import { Trophy, Zap, Flame, Clock, TrendingUp, Award, Star, MapPin, Calendar, C
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -61,56 +62,29 @@ export default function DashboardPage() {
       try {
         // 1. Get current user
         const { data: { user }, error: authError } = await supabase.auth.getUser();
+
         if (authError || !user) {
           if (mounted) setLoading(false);
           return;
         }
 
         // 2. Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('full_name, school_name, player_type, district, province, total_score, national_rank, district_rank, streak')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (profileError) throw profileError;
+        const profileData = await db.getProfile(user.id);
         if (mounted) setProfile(profileData);
 
         // 3. Fetch all badges
-        const { data: badgesData, error: badgesError } = await supabase
-          .from('badges')
-          .select('*')
-          .order('order_index', { ascending: true }); // assume order_index exists or just any order
-
-        if (badgesError) throw badgesError;
+        const badgesData = await db.getBadges();
         if (mounted) setAllBadges(badgesData || []);
 
         // 4. Fetch user's earned badge IDs
-        const { data: userBadgesData, error: userBadgesError } = await supabase
-          .from('user_badges')
-          .select('badge_id')
-          .eq('user_id', user.id);
-
-        if (userBadgesError) throw userBadgesError;
+        const userBadgesData = await db.getUserBadges(user.id);
 
         const earnedIds = new Set((userBadgesData || []).map(ub => ub.badge_id));
         const earned = (badgesData || []).filter(badge => earnedIds.has(badge.id));
         if (mounted) setEarnedBadges(earned);
 
         // 5. Fetch recent challenge results
-        const { data: resultsData, error: resultsError } = await supabase
-          .from('challenge_results')
-          .select(`
-            score,
-            rank,
-            completed_at,
-            challenges (title)
-          `)
-          .eq('user_id', user.id)
-          .order('completed_at', { ascending: false })
-          .limit(5);
-
-        if (resultsError) throw resultsError;
+        const resultsData = await db.getRecentResults(user.id);
 
         const formattedResults = (resultsData || []).map((item: any) => ({
           challenge: item.challenges?.title || 'Challenge',
@@ -121,16 +95,8 @@ export default function DashboardPage() {
         if (mounted) setRecentChallenges(formattedResults);
 
         // 6. Fetch upcoming challenge
-        const { data: upcomingData, error: upcomingError } = await supabase
-          .from('challenges')
-          .select('*')
-          .eq('status', 'upcoming')
-          .gte('scheduled_date', new Date().toISOString())
-          .order('scheduled_date', { ascending: true })
-          .limit(1);
-
-        if (upcomingError) throw upcomingError;
-        if (mounted) setUpcomingChallenge(upcomingData?.[0] || null);
+        const upcomingData = await db.getUpcomingChallenge();
+        if (mounted) setUpcomingChallenge(upcomingData);
 
       } catch (err) {
         console.error('Dashboard data fetch error:', err);

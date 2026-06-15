@@ -1,21 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trophy, Share2, Chrome as Home, TrendingUp, CircleCheck as CheckCircle2, Star } from 'lucide-react';
+import { Trophy, Share2, Chrome as Home, TrendingUp, CircleCheck as CheckCircle2, Star, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { SAMPLE_QUESTIONS, DUMMY_PROFILE } from '@/lib/dummy-data';
-
-const MOCK_RESULT = {
-  total_score: 2.17,
-  national_rank: 47,
-  district_rank: 3,
-  answers: SAMPLE_QUESTIONS.map((q) => ({
-    question: q,
-    selected_option: q.options[0],
-    earned_score: q.options[0].score,
-  })),
-};
+import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 
 function ScoreGauge({ score, max = 20 }: { score: number; max?: number }) {
   const pct = Math.min((score / max) * 100, 100);
@@ -42,17 +33,110 @@ function ScoreGauge({ score, max = 20 }: { score: number; max?: number }) {
 }
 
 export default function ResultsPage() {
-  const result = MOCK_RESULT;
-  const profile = DUMMY_PROFILE;
+  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadResults() {
+      try {
+        let userId = '';
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+
+        if (!userId) {
+          setLoading(false);
+          return;
+        }
+
+        const prof = await db.getProfile(userId);
+        setProfile(prof);
+
+        const recent = await db.getRecentResults(userId);
+
+        if (recent && recent.length > 0) {
+          const latestResult = recent[0];
+          let challengeId = '';
+          if (typeof window !== 'undefined') {
+            const list = JSON.parse(localStorage.getItem('sl_challenge_results') || '[]');
+            const userRes = list.filter((r: any) => r.user_id === userId).sort((a: any, b: any) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+            if (userRes.length > 0) {
+              challengeId = userRes[0].challenge_id;
+            }
+          }
+
+          if (challengeId) {
+            let userResponses: any[] = [];
+            if (typeof window !== 'undefined') {
+              const resList = JSON.parse(localStorage.getItem('sl_responses') || '[]');
+              userResponses = resList.filter((r: any) => r.user_id === userId && r.challenge_id === challengeId);
+            }
+
+            const questions = (await db.getQuestions(challengeId)) || [];
+
+            const mappedAnswers = userResponses.map(resp => {
+              const q = questions.find((question: any) => question.id === resp.question_id);
+              const opt = q ? (q.options || q.question_options || []).find((o: any) => o.id === resp.option_id) : null;
+              return {
+                question: q || { question_text: 'Challenge Question', options: [] },
+                selected_option: opt || { option_label: 'A', option_text: 'Your choice', selection_count: 0, score: 0 },
+                earned_score: opt ? Number(opt.score) : 0
+              };
+            }).filter((item: any) => item.question);
+
+            setResult({
+              challenge_title: (latestResult.challenges as any)?.title || 'Smart Challenge',
+              total_score: latestResult.score || 0,
+              national_rank: latestResult.rank || 1,
+              district_rank: prof?.district_rank || 1,
+              answers: mappedAnswers
+            });
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load results:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadResults();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (!result || !profile || !result.answers || result.answers.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-8 text-center max-w-sm">
+          <Trophy className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">No Results Yet</h2>
+          <p className="text-slate-500 mb-6">You haven&apos;t completed any challenges yet. Go to the challenge page to take your first quiz!</p>
+          <Link href="/challenge">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">Go to Challenges</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const maxPossible = result.answers.length;
   const percentage = (result.total_score / maxPossible) * 100;
 
   const grade =
     percentage >= 80 ? { label: 'Outstanding', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' } :
-    percentage >= 65 ? { label: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' } :
-    percentage >= 50 ? { label: 'Good Thinker', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' } :
-    { label: 'Keep Growing', color: 'text-slate-600', bg: 'bg-slate-50 border-slate-200' };
+      percentage >= 65 ? { label: 'Excellent', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' } :
+        percentage >= 50 ? { label: 'Good Thinker', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' } :
+          { label: 'Keep Growing', color: 'text-slate-600', bg: 'bg-slate-50 border-slate-200' };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -60,7 +144,7 @@ export default function ResultsPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-2 mb-4 shadow-sm">
             <div className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-sm font-semibold text-slate-700">Friday Fire – Week 17 Results</span>
+            <span className="text-sm font-semibold text-slate-700">{result.challenge_title} Results</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">Your Results Are In!</h1>
           <p className="text-slate-500">Results published 48 hours after challenge closed. Here&apos;s how you did.</p>
@@ -120,7 +204,7 @@ export default function ResultsPage() {
             <h2 className="font-bold text-slate-900">Question-by-Question Breakdown</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {result.answers.map((item, i) => {
+            {result.answers.map((item: any, i: number) => {
               const barPct = item.earned_score * 100;
               return (
                 <div key={item.question.id} className="p-5">
@@ -151,7 +235,7 @@ export default function ResultsPage() {
                       <span className="text-xs text-slate-500 whitespace-nowrap">{item.selected_option.selection_count}% chose this</span>
                     </div>
                     <div className="mt-2 grid grid-cols-4 gap-1">
-                      {item.question.options.map((opt) => (
+                      {(item.question.options || []).map((opt: any) => (
                         <div key={opt.id} className={`text-center p-1.5 rounded-lg text-xs ${opt.id === item.selected_option.id ? 'bg-blue-100 text-blue-700 font-bold' : 'bg-slate-50 text-slate-400'}`}>
                           <div className="font-semibold">{opt.option_label}</div>
                           <div>{(opt.score * 100).toFixed(0)}%</div>

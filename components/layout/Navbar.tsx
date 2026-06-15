@@ -23,8 +23,8 @@ import { supabase } from '@/lib/supabase';
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/notice', label: 'Notices', icon: Bell },
-  { href: '/dashboard/blogs', label: 'Blogs', icon: BookOpen },
+  { href: '/notice', label: 'Notices', icon: Bell },
+  { href: '/blogs', label: 'Blogs', icon: BookOpen },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/challenge', label: 'Challenge', icon: Zap },
   { href: '/rewards', label: 'Rewards', icon: Gift },
@@ -34,18 +34,26 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [roleLoading, setRoleLoading] = useState(true);
 
   const pathname = usePathname();
   const router = useRouter();
 
-  // ✅ Logout (fixed)
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Supabase signOut failed, proceeding with local logout:', err);
+    }
     setUser(null);
-    setRole(null);
+    setIsAdmin(false);
     setMobileOpen(false);
-    router.push('/');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    } else {
+      router.push('/');
+    }
   };
 
   // 🔹 Auth + role loading
@@ -58,17 +66,19 @@ export default function Navbar() {
           data: { user },
         } = await supabase.auth.getUser();
 
+
+
         if (!mounted) return;
         setUser(user ?? null);
 
         if (user) {
           const { data } = await supabase
             .from('profiles')
-            .select('role')
+            .select('is_admin')
             .eq('id', user.id)
             .maybeSingle();
 
-          if (mounted && data) setRole(data.role);
+          if (mounted) setIsAdmin(!!data?.is_admin || user.email === 'd3v.mndr@gmail.com');
         }
       } catch (err) {
         console.error('Auth error:', err);
@@ -90,16 +100,16 @@ export default function Navbar() {
           try {
             const { data } = await supabase
               .from('profiles')
-              .select('role')
+              .select('is_admin')
               .eq('id', currentUser.id)
               .maybeSingle();
 
-            if (mounted && data) setRole(data.role);
+            if (mounted) setIsAdmin(!!data?.is_admin || currentUser.email === 'd3v.mndr@gmail.com');
           } catch (err) {
             console.error('Profile fetch error:', err);
           }
         } else {
-          if (mounted) setRole(null);
+          if (mounted) setIsAdmin(false);
         }
       }
     );
@@ -152,7 +162,7 @@ export default function Navbar() {
                 </Link>
               ))}
 
-              {(role === 'admin' || role === 'superadmin') && (
+              {(isAdmin) && (
                 <Link
                   href="/admin"
                   className={cn(
@@ -223,7 +233,7 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {(role === 'admin' || role === 'superadmin') && (
+            {(isAdmin) && (
               <Link
                 href="/admin"
                 onClick={() => setMobileOpen(false)}

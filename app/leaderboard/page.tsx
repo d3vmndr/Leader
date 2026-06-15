@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { cn } from '@/lib/utils';
 
 const TABS = [
@@ -45,11 +46,7 @@ export default function LeaderboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('district')
-          .eq('id', user.id)
-          .single();
+        const profile = await db.getProfile(user.id);
         if (profile) setCurrentUserDistrict(profile.district);
       }
     }
@@ -65,70 +62,53 @@ export default function LeaderboardPage() {
         const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
+        const mapProfilesToLeaderboard = (data: any[]): LeaderboardEntry[] => {
+          return data.map((item) => ({
+            id: item.id,
+            user_id: item.id,
+            full_name: item.full_name,
+            school_name: item.school_name,
+            district: item.district,
+            grade: item.grade,
+            streak: item.streak,
+            total_score: item.total_score,
+            national_rank: item.national_rank,
+          }));
+        };
+
         switch (activeTab) {
           case 'national': {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('id, full_name, school_name, district, grade, streak, total_score, national_rank')
-              .order('total_score', { ascending: false })
-              .limit(100);
-            if (error) throw error;
-            setLeaderboard(data || []);
+            const data = await db.getProfiles();
+            setLeaderboard(mapProfilesToLeaderboard(data || []));
             break;
           }
           case 'district': {
+            const data = await db.getProfiles();
             if (!currentUserDistrict) {
-              // If no user district, fallback to national top 100
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('id, full_name, school_name, district, grade, streak, total_score')
-                .order('total_score', { ascending: false })
-                .limit(100);
-              if (error) throw error;
-              setLeaderboard(data || []);
+              setLeaderboard(mapProfilesToLeaderboard(data || []));
             } else {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('id, full_name, school_name, district, grade, streak, total_score')
-                .eq('district', currentUserDistrict)
-                .order('total_score', { ascending: false })
-                .limit(100);
-              if (error) throw error;
-              setLeaderboard(data || []);
+              const filteredProfiles = data.filter(p => p.district === currentUserDistrict);
+              setLeaderboard(mapProfilesToLeaderboard(filteredProfiles || []));
             }
             break;
           }
           case 'grade8': {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('id, full_name, school_name, district, grade, streak, total_score')
-              .eq('grade', 8)
-              .order('total_score', { ascending: false })
-              .limit(100);
-            if (error) throw error;
-            setLeaderboard(data || []);
+            const data = await db.getProfiles();
+            const filteredProfiles = data.filter(p => p.grade === 8);
+            setLeaderboard(mapProfilesToLeaderboard(filteredProfiles || []));
             break;
           }
           case 'grade9': {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('id, full_name, school_name, district, grade, streak, total_score')
-              .eq('grade', 9)
-              .order('total_score', { ascending: false })
-              .limit(100);
-            if (error) throw error;
-            setLeaderboard(data || []);
+            const data = await db.getProfiles();
+            const filteredProfiles = data.filter(p => p.grade === 9);
+            setLeaderboard(mapProfilesToLeaderboard(filteredProfiles || []));
             break;
           }
           case 'weekly': {
-            const { data: results, error } = await supabase
-              .from('challenge_results')
-              .select('user_id, score, profiles(full_name, school_name, district, grade, streak)')
-              .gte('completed_at', sevenDaysAgo)
-              .not('score', 'is', null);
-            if (error) throw error;
+            const results = await db.getLeaderboardResults(sevenDaysAgo);
             const aggregated = new Map<string, LeaderboardEntry>();
             for (const res of results || []) {
+              const profile: any = Array.isArray(res.profiles) ? res.profiles[0] : res.profiles;
               const uid = res.user_id;
               const existing = aggregated.get(uid);
               const total = (existing?.total_score || 0) + (res.score || 0);
@@ -136,11 +116,11 @@ export default function LeaderboardPage() {
                 id: uid,
                 user_id: uid,
                 total_score: total,
-                full_name: res.profiles?.full_name || '',
-                school_name: res.profiles?.school_name || '',
-                district: res.profiles?.district || '',
-                grade: res.profiles?.grade || 0,
-                streak: res.profiles?.streak || 0,
+                full_name: profile?.full_name || '',
+                school_name: profile?.school_name || '',
+                district: profile?.district || '',
+                grade: profile?.grade || 0,
+                streak: profile?.streak || 0,
               });
             }
             const sorted = Array.from(aggregated.values())
@@ -150,14 +130,10 @@ export default function LeaderboardPage() {
             break;
           }
           case 'monthly': {
-            const { data: results, error } = await supabase
-              .from('challenge_results')
-              .select('user_id, score, profiles(full_name, school_name, district, grade, streak)')
-              .gte('completed_at', thirtyDaysAgo)
-              .not('score', 'is', null);
-            if (error) throw error;
+            const results = await db.getLeaderboardResults(thirtyDaysAgo);
             const aggregated = new Map<string, LeaderboardEntry>();
             for (const res of results || []) {
+              const profile: any = Array.isArray(res.profiles) ? res.profiles[0] : res.profiles;
               const uid = res.user_id;
               const existing = aggregated.get(uid);
               const total = (existing?.total_score || 0) + (res.score || 0);
@@ -165,11 +141,11 @@ export default function LeaderboardPage() {
                 id: uid,
                 user_id: uid,
                 total_score: total,
-                full_name: res.profiles?.full_name || '',
-                school_name: res.profiles?.school_name || '',
-                district: res.profiles?.district || '',
-                grade: res.profiles?.grade || 0,
-                streak: res.profiles?.streak || 0,
+                full_name: profile?.full_name || '',
+                school_name: profile?.school_name || '',
+                district: profile?.district || '',
+                grade: profile?.grade || 0,
+                streak: profile?.streak || 0,
               });
             }
             const sorted = Array.from(aggregated.values())
@@ -292,8 +268,8 @@ export default function LeaderboardPage() {
                     i === 0
                       ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300'
                       : i === 1
-                      ? 'bg-gradient-to-br from-slate-50 to-gray-100 border-slate-300'
-                      : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300'
+                        ? 'bg-gradient-to-br from-slate-50 to-gray-100 border-slate-300'
+                        : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300'
                   )}
                 >
                   <div className="text-4xl mb-2">{MEDAL_ICONS[i]}</div>

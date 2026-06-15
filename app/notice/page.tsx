@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Bell, Calendar, User, Search, Pin, Archive, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, Calendar, User, Search, Pin, Archive, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { db } from '@/lib/db';
 
 const NOTICES = [
   {
@@ -68,12 +69,43 @@ type NoticeType = 'all' | 'announcement' | 'alert' | 'success' | 'info';
 export default function NoticePage() {
   const [activeFilter, setActiveFilter] = useState<NoticeType>('all');
   const [search, setSearch] = useState('');
+  const [noticesList, setNoticesList] = useState<any[]>([]);
+  const [readNotices, setReadNotices] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedNotice, setSelectedNotice] = useState<any | null>(null);
+
+  useEffect(() => {
+    async function loadNotices() {
+      try {
+        const data = await db.getNotices();
+        setNoticesList(data);
+        const stored = localStorage.getItem('read_notices');
+        if (stored) {
+          setReadNotices(JSON.parse(stored));
+        }
+      } catch (err) {
+        console.error('Failed to load notices:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadNotices();
+  }, []);
+
+  const handleNoticeClick = (notice: any) => {
+    setSelectedNotice(notice);
+    if (!readNotices.includes(notice.id)) {
+      const updated = [...readNotices, notice.id];
+      setReadNotices(updated);
+      localStorage.setItem('read_notices', JSON.stringify(updated));
+    }
+  };
 
   const typeColors: Record<string, { bg: string; text: string; icon: string }> = {
-    announcement: { bg: 'bg-blue-50', text: 'text-blue-700', icon: '📢' },
-    alert: { bg: 'bg-red-50', text: 'text-red-700', icon: '⚠️' },
-    success: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: '✨' },
-    info: { bg: 'bg-amber-50', text: 'text-amber-700', icon: 'ℹ️' },
+    announcement: { bg: 'bg-blue-50/50 hover:bg-blue-50', text: 'text-blue-700', icon: '📢' },
+    alert: { bg: 'bg-red-50/50 hover:bg-red-50', text: 'text-red-700', icon: '⚠️' },
+    success: { bg: 'bg-emerald-50/50 hover:bg-emerald-50', text: 'text-emerald-700', icon: '✨' },
+    info: { bg: 'bg-amber-50/50 hover:bg-amber-50', text: 'text-amber-700', icon: 'ℹ️' },
   };
 
   const typeIcons: Record<string, typeof Bell> = {
@@ -83,15 +115,27 @@ export default function NoticePage() {
     info: Info,
   };
 
-  const filtered = NOTICES.filter((notice) => {
+  const filtered = noticesList.filter((notice) => {
     const matchesType = activeFilter === 'all' || notice.type === activeFilter;
     const matchesSearch = !search || notice.title.toLowerCase().includes(search.toLowerCase()) ||
-                          notice.description.toLowerCase().includes(search.toLowerCase());
+      notice.description.toLowerCase().includes(search.toLowerCase());
     return matchesType && matchesSearch;
-  });
+  }).map(n => ({
+    ...n,
+    isPinned: n.is_pinned || n.isPinned,
+    read: readNotices.includes(n.id) || n.read
+  }));
 
   const pinnedNotices = filtered.filter((n) => n.isPinned);
   const regularNotices = filtered.filter((n) => !n.isPinned);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -165,7 +209,8 @@ export default function NoticePage() {
                     return (
                       <div
                         key={notice.id}
-                        className={`${colors.bg} border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow cursor-pointer group`}
+                        onClick={() => handleNoticeClick(notice)}
+                        className={`${colors.bg} border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer group`}
                       >
                         <div className="flex gap-4">
                           <div className="flex-shrink-0 text-2xl mt-0.5">{colors.icon}</div>
@@ -195,7 +240,8 @@ export default function NoticePage() {
                   return (
                     <div
                       key={notice.id}
-                      className={`${colors.bg} border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer ${!notice.read ? 'ring-2 ring-blue-400' : ''}`}
+                      onClick={() => handleNoticeClick(notice)}
+                      className={`${colors.bg} border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer ${!notice.read ? 'ring-2 ring-blue-500 font-bold' : 'opacity-85'}`}
                     >
                       <div className="flex gap-3 items-start">
                         <span className="text-lg flex-shrink-0 mt-0.5">{colors.icon}</span>
@@ -234,6 +280,41 @@ export default function NoticePage() {
           </div>
         </div>
       </div>
+
+      {/* Notice Detail Modal */}
+      {selectedNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-8 shadow-2xl relative space-y-6">
+            <button
+              onClick={() => setSelectedNotice(null)}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
+                {typeColors[selectedNotice.type]?.icon || '📢'}
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{selectedNotice.type}</span>
+                <h3 className="font-black text-slate-900 text-lg md:text-xl leading-tight">
+                  {selectedNotice.title}
+                </h3>
+              </div>
+            </div>
+            <div className="text-slate-600 text-sm md:text-base leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              {selectedNotice.description}
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{new Date(selectedNotice.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span className="text-emerald-600 font-semibold flex items-center gap-1">✓ Read</span>
+            </div>
+            <Button onClick={() => setSelectedNotice(null)} className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">
+              Close Announcement
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

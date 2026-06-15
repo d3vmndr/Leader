@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { BookOpen, Calendar, User, Search, Tag, ArrowRight, Clock, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BookOpen, Calendar, User, Search, Tag, ArrowRight, Clock, Heart, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { db } from '@/lib/db';
 
 const BLOGS = [
   {
@@ -86,6 +87,23 @@ type CategoryFilter = 'all' | 'Strategy' | 'Psychology' | 'Tips & Tricks' | 'Ana
 export default function BlogsPage() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [search, setSearch] = useState('');
+  const [blogsList, setBlogsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBlog, setSelectedBlog] = useState<any | null>(null);
+
+  useEffect(() => {
+    async function loadBlogs() {
+      try {
+        const data = await db.getBlogs();
+        setBlogsList(data);
+      } catch (err) {
+        console.error('Failed to load blogs:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBlogs();
+  }, []);
 
   const categories: { id: CategoryFilter; label: string; color: string }[] = [
     { id: 'all', label: 'All Articles', color: 'bg-slate-100' },
@@ -102,15 +120,23 @@ export default function BlogsPage() {
     Analysis: 'bg-amber-50 text-amber-700 border-amber-200',
   };
 
-  const filtered = BLOGS.filter((blog) => {
+  const filtered = blogsList.filter((blog) => {
     const matchesCategory = activeCategory === 'all' || blog.category === activeCategory;
     const matchesSearch = !search || blog.title.toLowerCase().includes(search.toLowerCase()) ||
-                          blog.excerpt.toLowerCase().includes(search.toLowerCase());
+      blog.excerpt.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const featured = filtered.filter((b) => b.featured);
   const regular = filtered.filter((b) => !b.featured);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -164,11 +190,12 @@ export default function BlogsPage() {
               {featured.map((blog) => (
                 <article
                   key={blog.id}
+                  onClick={() => setSelectedBlog(blog)}
                   className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer"
                 >
                   <div className="relative h-48 overflow-hidden bg-slate-100">
                     <img
-                      src={blog.image}
+                      src={blog.image_url || blog.image}
                       alt={blog.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
@@ -217,12 +244,13 @@ export default function BlogsPage() {
               {regular.map((blog) => (
                 <article
                   key={blog.id}
+                  onClick={() => setSelectedBlog(blog)}
                   className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md transition-shadow group cursor-pointer"
                 >
                   <div className="flex gap-6">
                     <div className="hidden md:block flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-slate-100">
                       <img
-                        src={blog.image}
+                        src={blog.image_url || blog.image}
                         alt={blog.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />
@@ -309,6 +337,66 @@ export default function BlogsPage() {
           </div>
         </div>
       </div>
+
+      {/* Blog Detail Modal */}
+      {selectedBlog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl border border-slate-100 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl flex flex-col">
+            <div className="relative h-64 overflow-hidden bg-slate-100 flex-shrink-0">
+              <img
+                src={selectedBlog.image_url || selectedBlog.image}
+                alt={selectedBlog.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+              <button
+                onClick={() => setSelectedBlog(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center text-slate-800 shadow-md transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-4 left-6 right-6 text-white">
+                <Badge className={`${categoryColors[selectedBlog.category]} border text-xs font-semibold mb-2`}>
+                  {selectedBlog.category}
+                </Badge>
+                <h2 className="text-xl md:text-2xl font-black leading-tight text-white drop-shadow-sm">
+                  {selectedBlog.title}
+                </h2>
+              </div>
+            </div>
+            <div className="p-6 md:p-8 flex-1 overflow-y-auto space-y-6">
+              <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{selectedBlog.author}</span>
+                  <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{new Date(selectedBlog.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{selectedBlog.read_time || selectedBlog.readTime || 5} min read</span>
+              </div>
+              <div className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                {selectedBlog.content || selectedBlog.excerpt}
+              </div>
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100">
+                <button
+                  onClick={async () => {
+                    try {
+                      const updated = await db.updateBlog(selectedBlog.id, { likes: (selectedBlog.likes || 0) + 1 });
+                      if (updated) {
+                        setSelectedBlog(updated);
+                        setBlogsList(prev => prev.map(b => b.id === selectedBlog.id ? updated : b));
+                      }
+                    } catch (e) { }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 font-semibold text-sm transition-colors"
+                >
+                  <Heart className="w-4 h-4 fill-red-600" />
+                  <span>{selectedBlog.likes || 0} Likes</span>
+                </button>
+                <Button onClick={() => setSelectedBlog(null)} variant="outline">Close Article</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

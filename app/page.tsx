@@ -1,8 +1,11 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRight, Target, Globe, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DUMMY_LEADERBOARD, DUMMY_DISTRICT_STATS } from '@/lib/dummy-data';
+import { db } from '@/lib/db';
 
 function HeroSection() {
   return (
@@ -98,7 +101,7 @@ function HowItWorksSection() {
             <div>
               <h4 className="font-bold text-slate-900 mb-1">Scoring Value</h4>
               <p className="text-sm text-slate-600">
-               Scoring Value will be shown here.
+                Scoring Value will be shown here.
               </p>
             </div>
           </div>
@@ -143,8 +146,8 @@ function ScheduleSection() {
   );
 }
 
-function LeaderboardPreview() {
-  const top5 = DUMMY_LEADERBOARD.slice(0, 5);
+function LeaderboardPreview({ leaderboard }: { leaderboard: any[] }) {
+  const top5 = leaderboard.slice(0, 5);
   const medals = ['🥇', '🥈', '🥉'];
 
   return (
@@ -195,8 +198,8 @@ function LeaderboardPreview() {
   );
 }
 
-function DistrictPreview() {
-  const top5 = DUMMY_DISTRICT_STATS.slice(0, 5);
+function DistrictPreview({ districts }: { districts: any[] }) {
+  const top5 = districts.slice(0, 5);
 
   return (
     <section className="py-20 bg-white">
@@ -334,13 +337,39 @@ function CtaSection() {
 }
 
 export default function HomePage() {
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const profiles = (await db.getProfiles()) as any[];
+        const mappedLeaderboard = (profiles || []).filter(Boolean).map((p: any, idx: number) => ({
+          id: p.id,
+          total_score: p.total_score || 0,
+          national_rank: p.national_rank || (idx + 1),
+          profile: p
+        }));
+        setLeaderboard(mappedLeaderboard);
+
+        const distStats = await db.getDistrictStats();
+        setDistricts(distStats || []);
+      } catch (err) {
+        console.error('Error loading homepage live stats:', err);
+        setLeaderboard([]);
+        setDistricts([]);
+      }
+    }
+    loadData();
+  }, []);
+
   return (
     <>
       <HeroSection />
       <HowItWorksSection />
       <ScheduleSection />
-      <LeaderboardPreview />
-      <DistrictPreview />
+      <LeaderboardPreview leaderboard={leaderboard} />
+      <DistrictPreview districts={districts} />
       <RewardsSection />
       <WhySection />
       <CtaSection />

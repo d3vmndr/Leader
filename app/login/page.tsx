@@ -21,12 +21,19 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) {
-      setError(authError.message);
-    } else {
-      router.push('/dashboard');
+
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (authError) {
+        setError(authError.message);
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Login failed. Please check your network connection.');
     }
+
     setLoading(false);
   }
 
@@ -140,10 +147,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-sm text-amber-800 font-medium mb-2">Demo Access</p>
-            <p className="text-xs text-amber-700">Use any email + password to explore the demo dashboard.</p>
-          </div>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             New to SmartLeague?{' '}

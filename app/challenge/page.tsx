@@ -5,42 +5,11 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Clock, Shield, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { SAMPLE_QUESTIONS } from '@/lib/dummy-data';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 const CHALLENGE_DURATION = 30 * 60;
-
-const ALL_QUESTIONS = [
-  ...SAMPLE_QUESTIONS,
-  {
-    id: 'q-006', challenge_id: 'ch-001', question_text: 'You witness a friend cheating during an exam. What do you do?', question_type: 'ethical' as const, order_index: 6,
-    options: [
-      { id: 'o-006a', question_id: 'q-006', option_label: 'A' as const, option_text: 'Stay silent to protect your friendship', selection_count: 20, score: 0.20 },
-      { id: 'o-006b', question_id: 'q-006', option_label: 'B' as const, option_text: 'Quietly tell them to stop right away', selection_count: 35, score: 0.35 },
-      { id: 'o-006c', question_id: 'q-006', option_label: 'C' as const, option_text: 'Report to the teacher immediately', selection_count: 28, score: 0.28 },
-      { id: 'o-006d', question_id: 'q-006', option_label: 'D' as const, option_text: 'Join in since others might too', selection_count: 17, score: 0.17 },
-    ],
-  },
-  {
-    id: 'q-007', challenge_id: 'ch-001', question_text: 'Your group project is failing. Two days left. Best approach?', question_type: 'leadership' as const, order_index: 7,
-    options: [
-      { id: 'o-007a', question_id: 'q-007', option_label: 'A' as const, option_text: 'Work all night and do it all yourself', selection_count: 15, score: 0.15 },
-      { id: 'o-007b', question_id: 'q-007', option_label: 'B' as const, option_text: 'Hold an emergency team meeting and divide tasks', selection_count: 50, score: 0.50 },
-      { id: 'o-007c', question_id: 'q-007', option_label: 'C' as const, option_text: 'Ask teacher for an extension', selection_count: 22, score: 0.22 },
-      { id: 'o-007d', question_id: 'q-007', option_label: 'D' as const, option_text: 'Submit what you have with an apology note', selection_count: 13, score: 0.13 },
-    ],
-  },
-  {
-    id: 'q-008', challenge_id: 'ch-001', question_text: 'What do you think matters most in a true friendship?', question_type: 'opinion' as const, order_index: 8,
-    options: [
-      { id: 'o-008a', question_id: 'q-008', option_label: 'A' as const, option_text: 'Honest communication at all times', selection_count: 40, score: 0.40 },
-      { id: 'o-008b', question_id: 'q-008', option_label: 'B' as const, option_text: 'Shared interests and hobbies', selection_count: 18, score: 0.18 },
-      { id: 'o-008c', question_id: 'q-008', option_label: 'C' as const, option_text: 'Being there through hard times', selection_count: 32, score: 0.32 },
-      { id: 'o-008d', question_id: 'q-008', option_label: 'D' as const, option_text: 'Having fun and making memories together', selection_count: 10, score: 0.10 },
-    ],
-  },
-];
 
 const QUESTION_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   emotional_intelligence: { label: 'Emotional Intelligence', color: 'bg-pink-100 text-pink-700' },
@@ -60,20 +29,63 @@ export default function ChallengePage() {
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
   const [submitted, setSubmitted] = useState(false);
   const [showFairPlay, setShowFairPlay] = useState(true);
-
-  const questions = ALL_QUESTIONS;
-  const current = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
-  const answeredCount = Object.keys(answers).length;
-
-  const handleSubmit = useCallback(() => {
-    if (submitted) return;
-    setSubmitted(true);
-    setTimeout(() => router.push('/results'), 1500);
-  }, [submitted, router]);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (showFairPlay || submitted) return;
+    let mounted = true;
+
+    async function loadQuestions() {
+      try {
+        const challenges = await db.getChallenges();
+        const activeChallenge = challenges.find((c: any) => c.status === 'active');
+
+        if (!activeChallenge) {
+          if (mounted) setError('No active challenges found right now.');
+          return;
+        }
+
+        const questionsData = await db.getQuestions(activeChallenge.id);
+
+        if (mounted && questionsData) {
+          setQuestions(questionsData);
+        }
+      } catch (err) {
+        console.error('Failed to load questions:', err);
+        if (mounted) setError('Failed to load the challenge.');
+      }
+    }
+
+    loadQuestions();
+    return () => { mounted = false; };
+  }, []);
+
+  const current = questions[currentIndex];
+
+  const progress = questions.length ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const answeredCount = Object.keys(answers).length;
+
+  const handleSubmit = useCallback(async () => {
+    if (submitted) return;
+    try {
+      let userId = '';
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) userId = user.id;
+
+      const activeChallengeId = current?.challenge_id;
+      if (activeChallengeId && userId) {
+        // Submit answers dynamically to database / client-side storage
+        await db.submitAnswers(userId, activeChallengeId, answers);
+      }
+    } catch (err) {
+      console.error('Submission error:', err);
+    }
+    setSubmitted(true);
+    setTimeout(() => router.push('/results'), 1500);
+  }, [submitted, router, answers, current]);
+
+  useEffect(() => {
+    if (showFairPlay || submitted || questions.length === 0) return;
     const id = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) { clearInterval(id); handleSubmit(); return 0; }
@@ -81,8 +93,28 @@ export default function ChallengePage() {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [showFairPlay, submitted, handleSubmit]);
+  }, [showFairPlay, submitted, handleSubmit, questions.length]);
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-red-200 shadow-xl p-8 text-center max-w-sm">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Oops!</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <Button onClick={() => router.push('/dashboard')} className="w-full">Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading challenge...
+      </div>
+    );
+  }
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
@@ -125,15 +157,15 @@ export default function ChallengePage() {
             <p className="text-xs text-amber-800">You have <strong>30 minutes</strong> to answer all {questions.length} questions. The timer starts once you click begin.</p>
           </div>
           <Button onClick={async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    router.push('/login?redirect=/challenge');
-    return;
-  }
+            if (!user) {
+              router.push('/login?redirect=/challenge');
+              return;
+            }
 
-  setShowFairPlay(false);
-}}className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl">
+            setShowFairPlay(false);
+          }} className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl">
             I Understand — Begin Challenge
           </Button>
         </div>
@@ -195,7 +227,7 @@ export default function ChallengePage() {
             {current.question_text}
           </h2>
           <div className="space-y-3">
-            {current.options.map((option) => {
+            {(current.question_options || current.options || []).map((option: any) => {
               const isSelected = answers[current.id] === option.id;
               return (
                 <button
@@ -249,8 +281,8 @@ export default function ChallengePage() {
                 className={cn(
                   'w-6 h-6 rounded-full text-[10px] font-bold transition-all',
                   i === currentIndex ? 'bg-blue-600 text-white scale-110' :
-                  answers[questions[i].id] ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                  'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    answers[questions[i].id] ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                      'bg-slate-100 text-slate-400 hover:bg-slate-200'
                 )}
               >
                 {i + 1}
