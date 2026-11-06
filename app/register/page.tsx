@@ -47,36 +47,39 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.full_name,
+            username: form.username,
+            player_type: form.player_type,
+            school_name: form.school_name,
+            district: form.district,
+            province: form.province,
+            parent_phone: form.parent_phone,
+          },
+        },
+      });
 
-    if (signUpError || !data.user) {
-      setError(signUpError?.message || 'Signup failed');
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      if (!data.session) {
+        setError('Your account was created, but you cannot sign in yet. Please try logging in again shortly.');
+        return;
+      }
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err?.message || 'Could not reach the server. Please check your connection and try again.');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      full_name: form.full_name,
-      username: form.username,
-      player_type: form.player_type,
-      school_name: form.school_name,
-      district: form.district,
-      province: form.province,
-      parent_phone: form.parent_phone,
-    });
-
-    if (profileError) {
-      setError(profileError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push('/dashboard');
-    setLoading(false);
   }
 
   return (
