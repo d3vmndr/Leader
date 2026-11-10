@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'SmartLeague Nepal – Think Smart. Rank Nationally.',
-  description: "Nepal's first student opinion intelligence and social reasoning competition for Grade 8 & 9 students. No right answers. Only smart thinking.",
+  description: "Nepal's first student opinion intelligence and social reasoning competition for students. No right answers. Only smart thinking.",
   openGraph: {
     title: 'SmartLeague Nepal',
     description: 'No Right Answers. Only Smart Thinking.',

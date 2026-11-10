@@ -98,7 +98,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-slate-500">
-            &copy; 2024 SmartLeague Nepal. Built for Grade 8 &amp; 9 Students.
+            &copy; 2024 SmartLeague Nepal. Built for Students.
           </p>
           <div className="flex items-center gap-4">
             <Link href="#" className="text-xs text-slate-500 hover:text-white transition-colors">Privacy Policy</Link>

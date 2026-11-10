@@ -2,7 +2,6 @@ export interface Profile {
   id: string;
   full_name: string;
   username: string;
-  grade: 8 | 9;
   school_name: string;
   district: string;
   province: string;
@@ -64,7 +63,6 @@ export interface LeaderboardEntry {
   total_score: number;
   national_rank?: number;
   district_rank?: number;
-  grade_rank?: number;
   profile?: Profile;
 }
 

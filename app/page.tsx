@@ -19,7 +19,7 @@ function HeroSection() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
             <Zap className="w-4 h-4 text-amber-300" />
-            <span className="text-white text-sm font-medium">Grade 8 &amp; 9 | Nepal-wide Competition</span>
+            <span className="text-white text-sm font-medium">Nepal-wide Educational Competition</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-5 leading-tight">
             No Right Answers.
@@ -66,7 +66,7 @@ function HeroSection() {
 
 function HowItWorksSection() {
   const steps = [
-    { step: '01', icon: Users, title: 'Register & Join', description: 'Sign up with your grade, school, and district. Join the Nepal-wide community of smart thinkers.', color: 'from-blue-500 to-blue-700' },
+    { step: '01', icon: Users, title: 'Register & Join', description: 'Sign up with your school and district. Join the Nepal-wide community of smart thinkers.', color: 'from-blue-500 to-blue-700' },
     { step: '02', icon: Brain, title: 'Answer Scenarios', description: 'Face 20 real-life scenarios every Monday and Friday. No wrong answers — only your unique thinking.', color: 'from-emerald-500 to-teal-600' },
     { step: '03', icon: Trophy, title: 'Earn Points & Rank', description: 'Your score = how popular your choices were. Popular thinking = more points. Rank nationally!', color: 'from-amber-500 to-orange-500' },
   ];
@@ -188,8 +188,7 @@ function LeaderboardPreview({ leaderboard }: { leaderboard: any[] }) {
               </div>
               <div className="text-right">
                 <div className="font-bold text-blue-700">{entry.total_score.toFixed(2)}</div>
-                <div className="text-xs text-slate-400">Grade {entry.profile?.grade}</div>
-              </div>
+                              </div>
             </div>
           ))}
         </div>
@@ -317,7 +316,7 @@ function CtaSection() {
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
         <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Ready to Think Smarter?</h2>
         <p className="text-blue-100 text-lg mb-8">
-          Join 12,400+ Grade 8 &amp; 9 students already competing across Nepal. Your district needs a champion.
+          Join 12,400+ students already competing across Nepal. Your district needs a champion.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/register">

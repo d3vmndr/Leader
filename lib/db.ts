@@ -360,7 +360,7 @@ export const db = {
   async getLeaderboardResults(sinceDate: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('challenge_results')
-      .select('user_id, score, profiles(full_name, school_name, district, grade, streak)')
+      .select('user_id, score, profiles(full_name, school_name, district, streak)')
       .gte('completed_at', sinceDate)
       .not('score', 'is', null);
     if (error) throw error;

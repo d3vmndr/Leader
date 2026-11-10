@@ -12,8 +12,6 @@ import { cn } from '@/lib/utils';
 const TABS = [
   { id: 'national', label: 'National Top' },
   { id: 'district', label: 'District Leaders' },
-  { id: 'grade8', label: 'Grade 8' },
-  { id: 'grade9', label: 'Grade 9' },
   { id: 'weekly', label: 'Weekly Champions' },
   { id: 'monthly', label: 'Monthly Champions' },
 ];
@@ -26,7 +24,6 @@ interface LeaderboardEntry {
   full_name: string;
   school_name: string;
   district: string;
-  grade: number;
   streak: number;
   total_score: number;
   national_rank?: number;
@@ -69,7 +66,6 @@ export default function LeaderboardPage() {
             full_name: item.full_name,
             school_name: item.school_name,
             district: item.district,
-            grade: item.grade,
             streak: item.streak,
             total_score: item.total_score,
             national_rank: item.national_rank,
@@ -92,18 +88,6 @@ export default function LeaderboardPage() {
             }
             break;
           }
-          case 'grade8': {
-            const data = await db.getProfiles();
-            const filteredProfiles = data.filter(p => p.grade === 8);
-            setLeaderboard(mapProfilesToLeaderboard(filteredProfiles || []));
-            break;
-          }
-          case 'grade9': {
-            const data = await db.getProfiles();
-            const filteredProfiles = data.filter(p => p.grade === 9);
-            setLeaderboard(mapProfilesToLeaderboard(filteredProfiles || []));
-            break;
-          }
           case 'weekly': {
             const results = await db.getLeaderboardResults(sevenDaysAgo);
             const aggregated = new Map<string, LeaderboardEntry>();
@@ -119,7 +103,6 @@ export default function LeaderboardPage() {
                 full_name: profile?.full_name || '',
                 school_name: profile?.school_name || '',
                 district: profile?.district || '',
-                grade: profile?.grade || 0,
                 streak: profile?.streak || 0,
               });
             }
@@ -144,7 +127,6 @@ export default function LeaderboardPage() {
                 full_name: profile?.full_name || '',
                 school_name: profile?.school_name || '',
                 district: profile?.district || '',
-                grade: profile?.grade || 0,
                 streak: profile?.streak || 0,
               });
             }
@@ -280,7 +262,7 @@ export default function LeaderboardPage() {
                   </div>
                   <div className="font-bold text-slate-900 mb-0.5">{entry.full_name}</div>
                   <div className="text-xs text-slate-500 mb-2">
-                    {entry.district} · Grade {entry.grade}
+                    {entry.district}
                   </div>
                   <div className="text-2xl font-black text-blue-700">
                     {entry.total_score?.toFixed(2) || '0.00'}
@@ -348,9 +330,6 @@ export default function LeaderboardPage() {
                         <div className="text-xs text-slate-500 truncate">
                           {entry.school_name} · {entry.district}
                         </div>
-                      </div>
-                      <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-                        <div className="text-xs text-slate-400">Grade {entry.grade}</div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div
