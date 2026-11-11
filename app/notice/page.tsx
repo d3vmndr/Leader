@@ -7,63 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { db } from '@/lib/db';
 
-const NOTICES = [
-  {
-    id: 1,
-    title: 'Challenge 15 Results Are Live',
-    description: 'Results for Monday\'s emotional intelligence challenge are now available. Check your ranking and detailed performance breakdown.',
-    type: 'announcement',
-    date: '2024-04-20',
-    isPinned: true,
-    read: true,
-  },
-  {
-    id: 2,
-    title: 'Maintenance Window This Saturday',
-    description: 'SmartLeague will undergo scheduled maintenance on Saturday, April 22 from 2 AM to 4 AM UTC. During this time, the platform will be unavailable.',
-    type: 'alert',
-    date: '2024-04-19',
-    isPinned: true,
-    read: true,
-  },
-  {
-    id: 3,
-    title: 'New Badge Unlocked: Strategic Thinker',
-    description: 'Congratulations! You\'ve unlocked the Strategic Thinker badge for completing 5 challenges with perfect strategy execution.',
-    type: 'success',
-    date: '2024-04-18',
-    isPinned: false,
-    read: true,
-  },
-  {
-    id: 4,
-    title: 'District Championship Registration Open',
-    description: 'Registration for the Nepal District Championship is now open! Compete with top students from your district for prizes and scholarships.',
-    type: 'announcement',
-    date: '2024-04-17',
-    isPinned: false,
-    read: false,
-  },
-  {
-    id: 5,
-    title: 'New Feature: Challenge Replays',
-    description: 'You can now review and replay previous challenges to improve your strategy. Access this from your Results page.',
-    type: 'info',
-    date: '2024-04-16',
-    isPinned: false,
-    read: false,
-  },
-  {
-    id: 6,
-    title: 'Leaderboard Update - April Rankings',
-    description: 'The April monthly rankings have been finalized. See who made it to the top 10 and claim your prize eligibility.',
-    type: 'announcement',
-    date: '2024-04-15',
-    isPinned: false,
-    read: true,
-  },
-];
-
 type NoticeType = 'all' | 'announcement' | 'alert' | 'success' | 'info';
 
 export default function NoticePage() {

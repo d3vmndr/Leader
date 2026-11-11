@@ -6,8 +6,15 @@ import { Trophy, Zap, Brain, Users, MapPin, Star, Clock, TrendingUp, ChevronRigh
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { db } from '@/lib/db';
+import { NEPAL_DISTRICTS } from '@/lib/nepal-districts';
 
-function HeroSection() {
+interface HomeStats {
+  students: number;
+  districts: number;
+  challenges: number;
+}
+
+function HeroSection({ stats }: { stats: HomeStats }) {
   return (
     <section className="gradient-hero relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
@@ -27,7 +34,7 @@ function HeroSection() {
             <span className="text-amber-300">Only Smart Thinking.</span>
           </h1>
           <p className="text-lg md:text-xl text-blue-100 mb-3 max-w-2xl mx-auto leading-relaxed">
-            Nepal&apos;s first student opinion intelligence platform. Compete with 12,000+ students across 77 districts using emotional IQ and social reasoning.
+            Nepal&apos;s first student opinion intelligence platform. Compete with {stats.students.toLocaleString()} students across {stats.districts} districts using emotional IQ and social reasoning.
           </p>
           <p className="text-sm text-blue-200 mb-8 font-medium">
             Challenges every Monday &amp; Friday. Results in real-time. Rankings across Nepal.
@@ -48,9 +55,9 @@ function HeroSection() {
           </div>
           <div className="mt-10 grid grid-cols-3 gap-6 max-w-md mx-auto">
             {[
-              { value: '12,400+', label: 'Students' },
-              { value: '77', label: 'Districts' },
-              { value: '180+', label: 'Challenges' },
+              { value: stats.students.toLocaleString(), label: 'Students' },
+              { value: stats.districts.toLocaleString(), label: 'Districts' },
+              { value: stats.challenges.toLocaleString(), label: 'Challenges' },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
                 <div className="text-2xl font-black text-white">{value}</div>
@@ -338,6 +345,7 @@ function CtaSection() {
 export default function HomePage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
+  const [stats, setStats] = useState<HomeStats>({ students: 0, districts: NEPAL_DISTRICTS.length, challenges: 0 });
 
   useEffect(() => {
     async function loadData() {
@@ -353,6 +361,9 @@ export default function HomePage() {
 
         const distStats = await db.getDistrictStats();
         setDistricts(distStats || []);
+
+        const challenges = await db.getChallenges();
+        setStats({ students: profiles.length, districts: NEPAL_DISTRICTS.length, challenges: challenges.length });
       } catch (err) {
         console.error('Error loading homepage live stats:', err);
         setLeaderboard([]);
@@ -364,7 +375,7 @@ export default function HomePage() {
 
   return (
     <>
-      <HeroSection />
+      <HeroSection stats={stats} />
       <HowItWorksSection />
       <ScheduleSection />
       <LeaderboardPreview leaderboard={leaderboard} />

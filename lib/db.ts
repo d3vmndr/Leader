@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from './supabase';
-import { Profile, Badge, Challenge } from './types';
+import { Profile, Badge, Challenge, RewardTier, StreakMilestone } from './types';
 
 export const db = {
   // ---------- CHALLENGES CRUD ----------
@@ -329,7 +329,28 @@ export const db = {
     const { data, error } = await supabase
       .from('badges')
       .select('*')
-      .order('order_index');
+      .order('created_at');
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getRewardTiers(): Promise<RewardTier[]> {
+    const { data, error } = await supabase
+      .from('reward_tiers')
+      .select('*, reward_items(*)')
+      .order('sort_order');
+    if (error) throw error;
+    return (data || []).map((tier) => ({
+      ...tier,
+      reward_items: [...(tier.reward_items || [])].sort((a, b) => a.sort_order - b.sort_order),
+    }));
+  },
+
+  async getStreakMilestones(): Promise<StreakMilestone[]> {
+    const { data, error } = await supabase
+      .from('streak_milestones')
+      .select('*')
+      .order('sort_order');
     if (error) throw error;
     return data || [];
   },

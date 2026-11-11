@@ -72,6 +72,36 @@ export interface Badge {
   description: string;
   icon: string;
   badge_type: 'achievement' | 'streak' | 'rank' | 'participation' | 'special';
+  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+}
+
+export interface RewardItem {
+  id: string;
+  tier_id: string;
+  label: string;
+  description: string;
+  sort_order: number;
+}
+
+export interface RewardTier {
+  id: string;
+  slug: string;
+  icon: string;
+  title: string;
+  requirement: string;
+  theme: 'blue' | 'emerald' | 'amber' | 'red';
+  sort_order: number;
+  reward_items: RewardItem[];
+}
+
+export interface StreakMilestone {
+  id: string;
+  weeks: number;
+  icon: string;
+  name: string;
+  description: string;
+  theme: 'blue' | 'orange' | 'sky' | 'amber';
+  sort_order: number;
 }
 
 export interface DistrictStat {
