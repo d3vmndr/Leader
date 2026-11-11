@@ -349,8 +349,12 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadData() {
+      let profileCount = 0;
+      let challengeCount = 0;
+
       try {
         const profiles = (await db.getProfiles()) as any[];
+        profileCount = profiles.length;
         const mappedLeaderboard = (profiles || []).filter(Boolean).map((p: any, idx: number) => ({
           id: p.id,
           total_score: p.total_score || 0,
@@ -358,17 +362,25 @@ export default function HomePage() {
           profile: p
         }));
         setLeaderboard(mappedLeaderboard);
+      } catch (err) {
+        console.error('Error loading leaderboard:', err);
+      }
 
+      try {
         const distStats = await db.getDistrictStats();
         setDistricts(distStats || []);
-
-        const challenges = await db.getChallenges();
-        setStats({ students: profiles.length, districts: NEPAL_DISTRICTS.length, challenges: challenges.length });
       } catch (err) {
-        console.error('Error loading homepage live stats:', err);
-        setLeaderboard([]);
-        setDistricts([]);
+        console.error('Error loading district stats:', err);
       }
+
+      try {
+        const challenges = await db.getChallenges();
+        challengeCount = challenges.length;
+      } catch (err) {
+        console.error('Error loading challenges:', err);
+      }
+
+      setStats({ students: profileCount, districts: NEPAL_DISTRICTS.length, challenges: challengeCount });
     }
     loadData();
   }, []);
